@@ -10,6 +10,6 @@ import java.util.List;
 
 @Repository
 public interface TestRepository extends JpaRepository<Test, Long> {
-    @Query("from Test t where not t.active and :dateTime >= t.startTime and :dateTime < t.deadLine")
+    @Query("from Test t where t.active = false and :dateTime >= t.startTime and :dateTime < t.deadLine")
     List<Test> findNotActiveBetweenStartTimeAndDeadLine(LocalDateTime dateTime);
 }

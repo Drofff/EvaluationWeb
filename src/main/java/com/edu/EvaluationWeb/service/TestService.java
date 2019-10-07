@@ -308,17 +308,17 @@ public class TestService {
         }
     }
 
-    public void activateTest(Long id) {
+    public void activateTest(Long id, Boolean isActive) {
         Test testToActivate = testRepository.findById(id)
                 .orElseThrow(() -> new BaseException("Invalid test id"));
         Profile testOwner = testToActivate.getTeacher();
         if(!userContext.isCurrentUser(testOwner.getUserId())) {
             throw new BaseException("Invalid permissions");
         }
-        if(testToActivate.getDeadLine().isBefore(LocalDateTime.now())) {
+        if(testToActivate.getDeadLine().isBefore(LocalDateTime.now()) && isActive) {
             throw new BaseException("Change test deadline to activate it");
         }
-        testToActivate.setActive(true);
+        testToActivate.setActive(isActive);
         testRepository.save(testToActivate);
     }
 

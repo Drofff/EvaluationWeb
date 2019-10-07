@@ -13,6 +13,8 @@ public class TestDto {
 
     private String startTime;
 
+    private Boolean active;
+
     private Set<String> groups = new HashSet<>();
 
     public String getName() {
@@ -53,5 +55,13 @@ public class TestDto {
 
     public void setStartTime(String startTime) {
         this.startTime = startTime;
+    }
+
+    public Boolean getActive() {
+        return active;
+    }
+
+    public void setActive(Boolean active) {
+        this.active = active;
     }
 }

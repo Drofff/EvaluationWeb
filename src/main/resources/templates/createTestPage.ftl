@@ -108,6 +108,13 @@
             </div>
         </div>
 
+        <div class="field">
+            <label>Start time</label>
+            <div class="field">
+                <input type="datetime-local" name="startTime">
+            </div>
+        </div>
+
         <div class="field" style="margin-top: 7%;">
             <label>Question:</label>
             <div class="field">

@@ -8,10 +8,7 @@ import com.edu.EvaluationWeb.exception.BaseException;
 import com.edu.EvaluationWeb.exception.ValidationException;
 import com.edu.EvaluationWeb.mapper.TestDtoMapper;
 import com.edu.EvaluationWeb.mapper.TestResultMapper;
-import com.edu.EvaluationWeb.repository.AnswerRepository;
-import com.edu.EvaluationWeb.repository.ProfileRepository;
-import com.edu.EvaluationWeb.repository.TestRepository;
-import com.edu.EvaluationWeb.repository.TestResultRepository;
+import com.edu.EvaluationWeb.repository.*;
 import com.edu.EvaluationWeb.service.FilesService;
 import com.edu.EvaluationWeb.service.TestService;
 import com.edu.EvaluationWeb.service.ValidationService;
@@ -24,11 +21,9 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
-import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -46,13 +41,14 @@ public class TestController {
     private final FilesService filesService;
     private final TestDtoMapper testDtoMapper;
     private final UserContext userContext;
+    private final GroupRepository groupRepository;
 
     @Autowired
     public TestController(ProfileRepository profileRepository, TestService testService,
                           TestRepository testRepository, TestResultRepository testResultRepository,
                           AnswerRepository answerRepository, ValidationService validationService,
                           TestResultMapper testResultMapper, FilesService filesService,
-                          TestDtoMapper testDtoMapper, UserContext userContext) {
+                          TestDtoMapper testDtoMapper, UserContext userContext, GroupRepository groupRepository) {
         this.profileRepository = profileRepository;
         this.testService = testService;
 
@@ -64,10 +60,15 @@ public class TestController {
         this.filesService = filesService;
         this.testDtoMapper = testDtoMapper;
         this.userContext = userContext;
+        this.groupRepository = groupRepository;
     }
 
     @GetMapping
-    public String getTestMainPage(Model model) {
+    public String getTestMainPage(Model model, @RequestParam(name = "error_message", required = false) String errorMessage) {
+
+        if(Objects.nonNull(errorMessage)) {
+            model.addAttribute("error_message", errorMessage);
+        }
 
         User user = userContext.getCurrentUser();
         Profile profile = user.getProfile();
@@ -452,6 +453,7 @@ public class TestController {
     @GetMapping("/create")
     @PreAuthorize("hasAuthority('TEACHER')")
     public String createTestPage(Model model) {
+        setMyGroups(model);
         return "createTestPage";
     }
 
@@ -459,6 +461,7 @@ public class TestController {
     @PreAuthorize("hasAuthority('TEACHER')")
     public String createTest(TestDto testDto, Model model, HttpServletRequest request) {
         Map<String, String[]> map = request.getParameterMap();
+        setMyGroups(model);
         Test newTest = null;
         try {
             newTest = toTestEntityWithQuestionsFromParams(testDto, map);
@@ -476,6 +479,11 @@ public class TestController {
             model.mergeAttributes(e.getFieldErrors());
         }
         return "createTestPage";
+    }
+
+    private void setMyGroups(Model model) {
+        Profile profile = userContext.getCurrentUser().getProfile();
+        model.addAttribute("my_groups", groupRepository.findByTeacher(profile));
     }
 
     private Test toTestEntityWithQuestionsFromParams(TestDto testDto, Map<String, String[]> params) {
@@ -523,6 +531,17 @@ public class TestController {
         }
         model.addAttribute("test", newTest);
         return "updateTestPage";
+    }
+
+    @GetMapping("/active/{id}/{isActive}")
+    public String activateTest(@PathVariable Long id, @PathVariable Boolean isActive,
+                               @RequestHeader String referer, Model model) {
+        try {
+            testService.activateTest(id, isActive);
+        } catch(BaseException e) {
+            model.addAttribute("error_message", e.getMessage());
+        }
+        return "redirect:" + Optional.ofNullable(referer).orElse("/test");
     }
 
 }
