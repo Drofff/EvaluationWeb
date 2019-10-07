@@ -22,10 +22,19 @@ public interface ProfileRepository extends JpaRepository<Profile, Long> {
     @Query("select p from Profile p join p.group g join g.teachers t where :teacher in t")
     Page<Profile> findByTeacher(Profile teacher, Pageable pageable);
 
+    @Query("select p from Profile p join p.group g join g.teachers t where g in :groups and CONCAT(p.firstName,' ', p.lastName) like CONCAT(:name, '%') and :teacher in t")
+    Page<Profile> findByNameAndInGroupsAndTeacher(String name, Set<Group> groups, Profile teacher, Pageable pageable);
+
+    @Query("select p from Profile p join p.group g join g.teachers t where CONCAT(p.firstName,' ', p.lastName) like CONCAT(:name, '%') and :teacher in t")
+    Page<Profile> findByNameAndTeacher(String name, Profile teacher, Pageable pageable);
+
+    @Query("select p from Profile p join p.group g join g.teachers t where g in :groups and :teacher in t")
+    Page<Profile> findByInGroupsAndTeacher(Set<Group> groups, Profile teacher, Pageable pageable);
+
     @Query("select p from Profile p join p.group g where g in :groups and CONCAT(p.firstName,' ', p.lastName) like CONCAT(:name, '%')")
     Page<Profile> findByNameAndInGroups(String name, Set<Group> groups, Pageable pageable);
 
-    @Query("select p from Profile p where CONCAT(p.firstName,' ', p.lastName) like CONCAT(:name, '%')")
+    @Query("select p from Profile p join p.group g where CONCAT(p.firstName,' ', p.lastName) like CONCAT(:name, '%')")
     Page<Profile> findByName(String name, Pageable pageable);
 
     @Query("select p from Profile p join p.group g where g in :groups")

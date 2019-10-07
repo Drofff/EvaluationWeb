@@ -49,15 +49,17 @@ public class StudentService {
 
     public Page<Profile> findByNameAndGroupIfPresent(Optional<String> name, List<Long> groupIds, Integer page) {
         PageRequest pageRequest = PageRequest.of(page, PAGE_SIZE);
+        User currentUser = userContext.getCurrentUser();
+        Profile profile = currentUser.getProfile();
         Set<Group> groups = loadGroups(groupIds);
         if(name.isPresent() && !groupIds.isEmpty()) {
-            return profileRepository.findByNameAndInGroups(name.get(), groups, pageRequest);
+            return profileRepository.findByNameAndInGroupsAndTeacher(name.get(), groups, profile, pageRequest);
         }
         if(name.isPresent()) {
-            return profileRepository.findByName(name.get(), pageRequest);
+            return profileRepository.findByNameAndTeacher(name.get(), profile, pageRequest);
         }
         if(!groupIds.isEmpty()) {
-            return profileRepository.findByInGroups(groups, pageRequest);
+            return profileRepository.findByInGroupsAndTeacher(groups, profile, pageRequest);
         }
         return getMyStudents(page);
     }

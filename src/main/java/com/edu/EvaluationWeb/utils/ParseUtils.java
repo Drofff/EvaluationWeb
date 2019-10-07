@@ -3,6 +3,7 @@ package com.edu.EvaluationWeb.utils;
 import com.edu.EvaluationWeb.entity.Answer;
 import com.edu.EvaluationWeb.entity.Question;
 import com.edu.EvaluationWeb.exception.BaseException;
+import org.springframework.validation.FieldError;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
