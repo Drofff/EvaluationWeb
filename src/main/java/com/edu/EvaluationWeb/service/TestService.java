@@ -50,7 +50,7 @@ public class TestService {
 
     public List<Test> getActiveTests(User user) {
 
-        Profile profile = profileRepository.findByUserId(user);
+        Profile profile = user.getProfile();
 
         return testRepository.findAll().stream()
                 .filter(Test::getActive)

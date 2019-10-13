@@ -1,5 +1,6 @@
 package com.edu.EvaluationWeb.controller;
 
+import com.edu.EvaluationWeb.constants.ModelConstants;
 import com.edu.EvaluationWeb.dto.CreateUserDto;
 import com.edu.EvaluationWeb.dto.ProfileAdminDto;
 import com.edu.EvaluationWeb.dto.ProfileDto;
@@ -26,7 +27,7 @@ import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/admin")
-@PreAuthorize("ADMIN")
+@PreAuthorize("hasAuthority('ADMIN')")
 public class AdminController {
 
     private final AdminService adminService;
@@ -35,7 +36,6 @@ public class AdminController {
 
     private final String CURRENT_PAGE_PARAM = "current_page";
     private final String TOTAL_PAGES_COUNT_PARAM = "total_pages";
-    private final String ERROR_MESSAGE_PARAM = "error_message";
 
     @Autowired
     public AdminController(AdminService adminService, ProfileMapper profileMapper,
@@ -59,7 +59,7 @@ public class AdminController {
         try {
             adminService.addGroup(name);
         } catch(BaseException e) {
-            model.addAttribute(ERROR_MESSAGE_PARAM, e.getMessage());
+            model.addAttribute(ModelConstants.ERROR_MESSAGE_PARAM, e.getMessage());
         }
         return "adminGroups";
     }
@@ -69,20 +69,28 @@ public class AdminController {
         try {
             adminService.changeGroupForUser(userId, groupId);
         } catch(BaseException e) {
-            model.addAttribute(ERROR_MESSAGE_PARAM, e.getMessage());
+            model.addAttribute(ModelConstants.ERROR_MESSAGE_PARAM, e.getMessage());
         }
         return "adminGroups";
     }
 
     @GetMapping("/users")
-    public String getAllUsers(Optional<String> name, Optional<Set<String>> groups,
-                              Optional<Integer> page, Model model) {
-        Page<Profile> users = adminService.getAllUsers(name, groups, page.orElse(0));
-        model.addAttribute(CURRENT_PAGE_PARAM, page.orElse(0));
-        model.addAttribute(TOTAL_PAGES_COUNT_PARAM, users.getTotalPages());
-        model.addAttribute("users", users.getContent().stream()
-                .map(this::toProfileAdminDto)
-                .collect(Collectors.toList()));
+    public String getAllUsers(Optional<String> name, @RequestParam(required = false) Set<String> groups,
+                              @RequestParam(required = false) Integer page, Model model) {
+        try {
+            Integer pageNumber = Optional.ofNullable(page).orElse(0);
+            Optional<Set<String>> selectedGroups = Optional.ofNullable(groups);
+            Page<Profile> users = adminService.getAllUsers(name, selectedGroups, pageNumber);
+            model.addAttribute(CURRENT_PAGE_PARAM, pageNumber);
+            model.addAttribute(TOTAL_PAGES_COUNT_PARAM, users.getTotalPages());
+            model.addAttribute("users", users.getContent().stream()
+                    .map(this::toProfileAdminDto)
+                    .collect(Collectors.toList()));
+            model.addAttribute("groups", adminService.getAllGroups(groups));
+            name.ifPresent(n -> model.addAttribute("oldName", n));
+        } catch(BaseException e) {
+            model.addAttribute(ModelConstants.ERROR_MESSAGE_PARAM, e.getMessage());
+        }
         return "adminUsers";
     }
 
@@ -95,10 +103,10 @@ public class AdminController {
                         userDto.getPosition(), userDto.getTeacher());
             } else {
                 model.mergeAttributes(errors);
-                model.addAttribute(ERROR_MESSAGE_PARAM, "Invalid data provided");
+                model.addAttribute(ModelConstants.ERROR_MESSAGE_PARAM, "Invalid data provided");
             }
         } catch(BaseException e) {
-            model.addAttribute(ERROR_MESSAGE_PARAM, e.getMessage());
+            model.addAttribute(ModelConstants.ERROR_MESSAGE_PARAM, e.getMessage());
         }
         return "adminUsers";
     }

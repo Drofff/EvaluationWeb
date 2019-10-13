@@ -3,6 +3,7 @@ package com.edu.EvaluationWeb.repository;
 import com.edu.EvaluationWeb.entity.Group;
 import com.edu.EvaluationWeb.entity.Profile;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
@@ -19,6 +20,6 @@ public interface GroupRepository extends JpaRepository<Group, Long> {
     Optional<Group> findByName(String name);
 
     @Query("from Group g where g.name like CONCAT(:name, '%')")
-    Page<Group> findByNameMatch(String name);
+    Page<Group> findByNameMatch(String name, Pageable pageable);
 
 }

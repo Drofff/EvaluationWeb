@@ -2,6 +2,12 @@ package com.edu.EvaluationWeb.dto;
 
 public class ProfileAdminDto extends ProfileDto {
 
+    private Boolean isTeacher;
+
+    private Long userId;
+
+    private Long profileId;
+
     public ProfileAdminDto() {}
 
     public ProfileAdminDto(ProfileDto profileDto) {
@@ -9,12 +15,6 @@ public class ProfileAdminDto extends ProfileDto {
                 profileDto.getPosition(), profileDto.getPhotoUrl(),
                 profileDto.getGroupName(), profileDto.getEmail());
     }
-
-    private Boolean isTeacher;
-
-    private Long userId;
-
-    private Long profileId;
 
     public Boolean getTeacher() {
         return isTeacher;

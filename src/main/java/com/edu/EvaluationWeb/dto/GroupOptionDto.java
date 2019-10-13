@@ -8,7 +8,7 @@ public class GroupOptionDto {
 
     private String name;
 
-    private Boolean selected;
+    private boolean selected;
 
     public GroupOptionDto() {}
 

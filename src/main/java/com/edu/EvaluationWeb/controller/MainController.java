@@ -1,12 +1,18 @@
 package com.edu.EvaluationWeb.controller;
 
+import com.edu.EvaluationWeb.constants.ModelConstants;
+import com.edu.EvaluationWeb.exception.BaseException;
 import com.edu.EvaluationWeb.repository.UserRepository;
 import com.edu.EvaluationWeb.service.CalendarService;
+import com.edu.EvaluationWeb.service.ProfileService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletRequest;
 import java.time.LocalDate;
@@ -14,11 +20,17 @@ import java.time.LocalDate;
 @Controller
 public class MainController {
 
-    @Autowired
-    UserRepository userRepository;
+    private final UserRepository userRepository;
+    private final CalendarService calendarService;
+    private final ProfileService profileService;
 
     @Autowired
-    CalendarService calendarService;
+    public MainController(UserRepository userRepository, CalendarService calendarService,
+                          ProfileService profileService) {
+        this.userRepository = userRepository;
+        this.calendarService = calendarService;
+        this.profileService = profileService;
+    }
 
     @RequestMapping("/login")
     public String getLoginPage(HttpServletRequest request, Model model) {
@@ -59,5 +71,21 @@ public class MainController {
         return "mainPage";
     }
 
+    @GetMapping("/registration")
+    public String fillProfileData() {
+        return "registrationPage";
+    }
+
+    @PostMapping("/registration")
+    public String registerUserProfileData(String firstName, String lastName, MultipartFile photo,
+                                          Model model) {
+        try {
+            profileService.registerProfile(firstName, lastName, photo);
+            return "redirect:/";
+        } catch(BaseException e) {
+            model.addAttribute(ModelConstants.ERROR_MESSAGE_PARAM, e.getMessage());
+        }
+        return "registrationPage";
+    }
 
 }

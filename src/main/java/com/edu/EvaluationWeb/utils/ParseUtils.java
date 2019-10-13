@@ -129,7 +129,7 @@ public class ParseUtils {
         return question;
     }
 
-    private static boolean matches(String name, String pattern) {
+    public static boolean matches(String name, String pattern) {
         return Pattern.compile(pattern).matcher(name).find();
     }
 

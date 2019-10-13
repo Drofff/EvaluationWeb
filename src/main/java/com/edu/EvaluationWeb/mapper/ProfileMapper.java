@@ -9,6 +9,8 @@ import org.modelmapper.TypeMap;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.util.Objects;
+
 @Component
 public class ProfileMapper extends Mapper {
 
@@ -28,7 +30,9 @@ public class ProfileMapper extends Mapper {
 
     public ProfileDto toDto(Profile profile) {
         ProfileDto profileDto = toDtoTypeMap.map(profile);
-        profileDto.setPhotoUrl(filesService.loadPhoto(profile.getPhotoUrl()));
+        if(Objects.nonNull(profile.getPhotoUrl())) {
+            profileDto.setPhotoUrl(filesService.loadPhoto(profile.getPhotoUrl()));
+        }
         return profileDto;
     }
 

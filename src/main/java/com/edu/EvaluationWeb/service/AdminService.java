@@ -1,5 +1,6 @@
 package com.edu.EvaluationWeb.service;
 
+import com.edu.EvaluationWeb.dto.GroupOptionDto;
 import com.edu.EvaluationWeb.entity.Group;
 import com.edu.EvaluationWeb.entity.Profile;
 import com.edu.EvaluationWeb.entity.Role;
@@ -17,6 +18,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class AdminService {
@@ -61,8 +63,18 @@ public class AdminService {
 
     public Page<Group> getAllGroups(Optional<String> name, Integer page) {
         Pageable pageable = PageRequest.of(page, PAGE_SIZE);
-        return name.isPresent() ? groupRepository.findByNameMatch(name.get()) :
+        return name.isPresent() ? groupRepository.findByNameMatch(name.get(), pageable) :
                 groupRepository.findAll(pageable);
+    }
+
+    public List<GroupOptionDto> getAllGroups(Set<String> selected) {
+        List<GroupOptionDto> groups = groupRepository.findAll().stream()
+                .map(GroupOptionDto::new)
+                .collect(Collectors.toList());
+        if(Objects.nonNull(selected) && !selected.isEmpty()) {
+            groups.forEach(group -> group.setSelected(selected.contains(group.getName())));
+        }
+        return groups;
     }
 
     public Page<Profile> getAllUsers(Optional<String> name,
@@ -82,6 +94,7 @@ public class AdminService {
 
     public void createAccount(String email, Long groupId, String position, Boolean isTeacher) {
         validateUserExistence(email);
+        isTeacher = Optional.ofNullable(isTeacher).orElse(false);
         Group group = groupRepository.findById(groupId)
                 .orElseThrow(() -> new BaseException("Group with such id do not exists"));
         String password = UUID.randomUUID().toString();
@@ -89,7 +102,7 @@ public class AdminService {
         user = userRepository.save(user);
         Profile profile = createDefaultProfileWithData(position, group, user);
         profile = profileRepository.save(profile);
-        updateGroup(profile, group, isTeacher);
+        updateGroupsMembers(profile, group);
         sendCredentialsToEmail(email, password);
     }
 
@@ -104,14 +117,6 @@ public class AdminService {
         User user = userRepository.findByUsername(email);
         if(Objects.nonNull(user)) {
             throw new BaseException("User with such email already exists");
-        }
-    }
-
-    private void updateGroup(Profile profile, Group group, Boolean isTeacher) {
-        if(isTeacher) {
-            updateGroupTeachers(profile, group);
-        } else {
-            updateGroupsMembers(profile, group);
         }
     }
 
@@ -158,16 +163,8 @@ public class AdminService {
         Group group = groupRepository.findById(groupId)
                 .orElseThrow(() -> new BaseException("Group with such id do not exists"));
         Profile profile = user.getProfile();
-        removeFromGroup(profile.getId(), profile.getGroup(), profile.getUserId().isTeacher());
-        updateGroup(profile, group, profile.getUserId().isTeacher());
-    }
-
-    private void removeFromGroup(Long profileId, Group group, Boolean isTeacher) {
-        if(isTeacher) {
-            removeTeacherFromGroup(profileId, group);
-        } else {
-            removeMemberFromGroup(profileId, group);
-        }
+        removeMemberFromGroup(profile.getId(), profile.getGroup());
+        updateGroupsMembers(profile, group);
     }
 
     private void removeTeacherFromGroup(Long teacherId, Group group) {

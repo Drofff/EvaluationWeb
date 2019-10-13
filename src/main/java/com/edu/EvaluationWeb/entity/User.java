@@ -7,6 +7,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import javax.persistence.*;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 
 @Entity
@@ -70,6 +71,12 @@ public class User implements UserDetails {
 
     public Boolean isTeacher() {
         return roles.contains(Role.TEACHER);
+    }
+
+    public Boolean isNew() {
+        boolean isNameNull = profile.getFirstName() == null || profile.getLastName() == null;
+        boolean isPhotoUrlNull = profile.getPhotoUrl() == null;
+        return isNameNull || isPhotoUrlNull;
     }
 
     public UsernamePasswordAuthenticationToken getAuthenticationToken() {

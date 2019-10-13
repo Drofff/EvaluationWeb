@@ -1,6 +1,7 @@
 package com.edu.EvaluationWeb.service;
 
 import com.edu.EvaluationWeb.component.UserContext;
+import com.edu.EvaluationWeb.constants.ProfileConstants;
 import com.edu.EvaluationWeb.dto.EditProfileDto;
 import com.edu.EvaluationWeb.entity.Group;
 import com.edu.EvaluationWeb.entity.Profile;
@@ -11,6 +12,7 @@ import com.edu.EvaluationWeb.exception.BaseException;
 import com.edu.EvaluationWeb.repository.GroupRepository;
 import com.edu.EvaluationWeb.repository.ProfileRepository;
 import com.edu.EvaluationWeb.repository.SubjectRepository;
+import com.edu.EvaluationWeb.utils.ValidationUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -42,18 +44,14 @@ public class ProfileService {
     }
 
     public Map<String, String> editProfile(EditProfileDto profileDto) {
-
         if(profileDto == null) {
             return Collections.singletonMap("Error", "Form can not be empty");
         }
-
         Map<String, String> validationResult = validationService.validate(profileDto);
         if(validationResult.size() > 0) {
             return validationResult;
         }
-
         Profile profile = userContext.getCurrentUser().getProfile();
-
         profile.setFirstName(profileDto.getFirstName());
         profile.setLastName(profileDto.getLastName());
         profileRepository.save(profile);
@@ -100,6 +98,41 @@ public class ProfileService {
 
     public List<Subject> getSubjectsByTeacher(Profile teacher) {
         return subjectRepository.findByTeacher(teacher.getUserId());
+    }
+
+    public void registerProfile(String firstName, String lastName, MultipartFile photo) {
+        User user = userContext.getCurrentUser();
+        if(!user.isNew()) {
+            throw new BaseException("User is already registered");
+        }
+        validateProfileData(firstName, lastName, photo);
+        Profile profile = user.getProfile();
+        profile.setFirstName(firstName);
+        profile.setLastName(lastName);
+        String photoUrl = savePhoto(photo, user);
+        profile.setPhotoUrl(photoUrl);
+        profileRepository.save(profile);
+    }
+
+    private String savePhoto(MultipartFile photo, User user) {
+        return filesService.save(photo, FileType.PHOTO, user);
+    }
+
+    private void validateProfileData(String firstName, String lastName, MultipartFile photo) {
+        validateName(firstName);
+        validateName(lastName);
+        validatePhoto(photo);
+    }
+
+    private void validatePhoto(MultipartFile photo) {
+        ValidationUtils.validateNonNull(photo, "Please provide your photo");
+        ValidationUtils.validateFileSize(photo);
+    }
+
+    private void validateName(String name) {
+        if(Objects.isNull(name) || name.isEmpty() || !name.matches(ProfileConstants.NAME_REGEX)) {
+            throw new BaseException("Sorry but we accept only non-empty names without special symbols, spaces and digits");
+        }
     }
 
 }
