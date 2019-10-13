@@ -37,11 +37,12 @@ public class Test {
     @JoinColumn(name = "teacher_id")
     private Profile teacher;
 
+    @NotNull
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "open_test",
-    joinColumns = { @JoinColumn(name = "test_id") },
-    inverseJoinColumns = { @JoinColumn(name = "group_id") })
-    @NotNull
+            joinColumns = { @JoinColumn(name = "test_id") },
+            inverseJoinColumns = { @JoinColumn(name = "group_id") }
+            )
     private Set<Group> groups;
 
     public Test() {}

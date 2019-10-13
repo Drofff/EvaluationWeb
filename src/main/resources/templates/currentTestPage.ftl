@@ -63,6 +63,11 @@
         My Storage
     </a>
 </#if>
+<#if isAdmin?? && isAdmin>
+<a class="item" href="/admin/users">
+    Admin Panel
+</a>
+</#if>
 <div class="right menu">
     <div class="item">
         <a class="ui primary button" href="/logout">Log out</a>

@@ -42,6 +42,9 @@ public class ProfileDataInterceptor extends HandlerInterceptorAdapter {
     public void postHandle(HttpServletRequest request, HttpServletResponse response,
                            Object handler, ModelAndView modelAndView) throws Exception {
         super.postHandle(request, response, handler, modelAndView);
+        if(Objects.isNull(modelAndView)) {
+            return;
+        }
         User currentUser = userContext.getCurrentUser();
         if(isAuthorizedAndNotNew(currentUser) && !isRedirect(modelAndView.getViewName())) {
             addUserProfileDataToModel(currentUser, modelAndView);
@@ -59,9 +62,11 @@ public class ProfileDataInterceptor extends HandlerInterceptorAdapter {
     private void addUserProfileDataToModel(User user, ModelAndView modelAndView) {
         Profile profile = user.getProfile();
         Boolean isTeacher = user.isTeacher();
+        Boolean isAdmin = user.isAdmin();
         String name = profile.getFirstName() + " " + profile.getLastName();
         String photoUrl = filesService.loadPhoto(profile.getPhotoUrl());
         modelAndView.addObject("isTeacher", isTeacher);
+        modelAndView.addObject("isAdmin", isAdmin);
         modelAndView.addObject("name", name);
         modelAndView.addObject("photoUrl", photoUrl);
     }

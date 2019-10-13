@@ -40,4 +40,7 @@ public interface ProfileRepository extends JpaRepository<Profile, Long> {
     @Query("select p from Profile p join p.group g where g in :groups")
     Page<Profile> findByInGroups(Set<Group> groups, Pageable pageable);
 
+    @Query("select p from Profile p join p.userId u join u.roles r where 'TEACHER' in r")
+    List<Profile> findAllTeachers();
+
 }

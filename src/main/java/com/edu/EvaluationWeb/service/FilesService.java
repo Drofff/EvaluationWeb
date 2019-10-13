@@ -18,7 +18,7 @@ public class FilesService {
 
     private final Environment environment;
 
-    private static final String IMAGE_PREFIX = "data:image/png;base64, ";
+    public static final String IMAGE_PREFIX = "data:image/png;base64, ";
 
     @Autowired
     public FilesService(Environment environment) {

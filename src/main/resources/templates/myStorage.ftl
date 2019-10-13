@@ -295,9 +295,11 @@
 
 <div class="ui modal" id="edit_permissions">
     <i class="close icon"></i>
-    <div class="header">
-        Edit permissions for ${currentDirectory}
-    </div>
+    <#if currentDirectory??>
+        <div class="header">
+            Edit permissions for ${currentDirectory}
+        </div>
+    </#if>
     <div class="image content">
         <form class="description" action="/teacher/storage/edit/permissions" method="post">
             <#if id??>

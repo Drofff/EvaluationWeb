@@ -22,6 +22,7 @@
         <b>EvaWeb <b style="color : #FFD700">Admin</b></b>
     </div>
     <a class="item" id="create_user">Create user</a>
+    <a class="item" href="/">Continue as user</a>
     <a class="item" href="/logout">Logout</a>
     </div>
 
@@ -79,7 +80,7 @@
     </div>
     </div>
 
-    <div style="margin-left: 25%; margin-top: 5%;">
+    <div style="margin-left: 20%; margin-top: 5%;">
         <form action="/admin/users" class="ui form" method="get">
 
             <div class="two fields">
@@ -101,30 +102,49 @@
 
         </form>
 
-        <div class="ui very relaxed list" style="margin-top: 5%;">
-            <#list users as user>
-                <#if user.photoUrl??>
-                    <div class="item">
-                        <img class="ui avatar image" src="${user.photoUrl}">
-                        <div class="content">
-                            <a class="header">${user.firstName} ${user.lastName}</a>
-                            <div class="description">Email: <b>${user.email}</b></div>
-                            <div class="description">Group: <b>${user.groupName}</b></div>
-                            <div class="description">Position: <b>${user.position}</b></div>
-                            <a>Change group</a>
-                        </div>
-                    </div>
-                <#else>
-                    <div class="item">
-                        <div class="content">
-                            <a class="header">${user.email}</a>
-                        <div class="description">Group: <b>${user.groupName}</b></div>
-                        <div class="description">Position: <b>${user.position}</b></div>
-                    </div>
-                    </div>
-                </#if>
-            </#list>
+    <div class="ui special cards" style="margin-top: 10%;">
+        <#list users as user>
+        <#if user.photoUrl??>
+        <div class="ui card">
+            <div class="image">
+                <img style="width: 290px; height: 290px" src="${user.photoUrl}">
+            </div>
+            <div class="content">
+                <a class="header">${user.firstName} ${user.lastName}</a>
+                <div class="meta">
+                    <span class="date">${user.position}</span>
+                </div>
+                <div class="description">Member of group: <b>${user.groupName}</b></div>
+            </div>
+            <div class="extra content">
+                <a>
+                    <i class="envelope icon"></i>
+                    ${user.email}
+                </a>
+            </div>
         </div>
+        <#else>
+        <div class="ui card">
+            <div class="image">
+                <img style="width: 290px; height: 290px" src="http://scma.com.ua/wp-content/uploads/2015/02/user.png">
+            </div>
+            <div class="content">
+                <a class="header">${user.email}</a>
+                <div class="meta">
+                    <span class="date">${user.position}</span>
+                </div>
+                <div class="description">Member of group: <b>${user.groupName}</b></div>
+            </div>
+            <div class="extra content">
+                <a>
+                    <i class="user icon"></i>
+                    User is not active yet
+                </a>
+            </div>
+        </div>
+        </#if>
+        </#list>
+    </div>
 
     </div>
 

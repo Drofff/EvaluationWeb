@@ -29,6 +29,7 @@ public class AdminService {
     private final GroupRepository groupRepository;
     private final PasswordEncoder passwordEncoder;
     private final MailService mailService;
+    private final FilesService filesService;
 
     @Value("${mail.message.account.created}")
     private String accountCreatedMailMessage;
@@ -40,13 +41,15 @@ public class AdminService {
     @Autowired
     public AdminService(ProfileRepository profileRepository, TestService testService,
                         UserRepository userRepository, GroupRepository groupRepository,
-                        PasswordEncoder passwordEncoder, MailService mailService) {
+                        PasswordEncoder passwordEncoder, MailService mailService,
+                        FilesService filesService) {
         this.profileRepository = profileRepository;
         this.testService = testService;
         this.userRepository = userRepository;
         this.groupRepository = groupRepository;
         this.passwordEncoder = passwordEncoder;
         this.mailService = mailService;
+        this.filesService = filesService;
     }
 
     public void addGroup(String name) {
@@ -59,6 +62,67 @@ public class AdminService {
         Group group = new Group();
         group.setName(name);
         groupRepository.save(group);
+    }
+
+    public void loadGroupPhotos(Group group) {
+        group.getMembers().forEach(this::loadProfilePhoto);
+        group.getTeachers().forEach(this::loadProfilePhoto);
+    }
+
+    private void loadProfilePhoto(Profile profile) {
+        String photoUrl = profile.getPhotoUrl();
+        if(Objects.nonNull(photoUrl) && !photoUrl.startsWith(FilesService.IMAGE_PREFIX)) {
+            String photo = filesService.loadPhoto(photoUrl);
+            profile.setPhotoUrl(photo);
+        }
+    }
+
+    public Group getGroupById(Long id) {
+        return groupRepository.findById(id)
+                .orElseThrow(() -> new BaseException("Group with such id do not exists"));
+    }
+
+    public void removeTeacherFromGroup(Long teacherId, Long groupId) {
+        Group group = getGroupById(groupId);
+        Profile teacher = getTeacherFromGroupById(teacherId, group)
+                .orElseThrow(() -> new BaseException("No such teacher in group " + group.getName()));;
+        group.getTeachers().remove(teacher);
+        groupRepository.save(group);
+    }
+
+    public void addTeacherToGroup(Long teacherId, Long groupId) {
+        Group group = getGroupById(groupId);
+        if(getTeacherFromGroupById(teacherId, group).isPresent()) {
+            throw new BaseException("User is already teacher in this group");
+        }
+        Profile teacher = profileRepository.findById(teacherId)
+                .filter(profile -> profile.getUserId().isTeacher())
+                .orElseThrow(() -> new BaseException("Teacher with such id do not exists"));
+        group.getTeachers().add(teacher);
+        groupRepository.save(group);
+    }
+
+    public void addMemberToGroup(Long memberId, Long groupId) {
+        Group group = getGroupById(groupId);
+        Profile member = profileRepository.findById(memberId)
+                .orElseThrow(() -> new BaseException("User with such id do not exists"));
+        member.setGroup(group);
+        profileRepository.save(member);
+    }
+
+    private Optional<Profile> getTeacherFromGroupById(Long teacherId, Group group) {
+        return group.getTeachers()
+                .stream()
+                .filter(t -> t.getId().equals(teacherId))
+                .findFirst();
+    }
+
+    public List<Profile> getAllTeachers() {
+        return profileRepository.findAllTeachers();
+    }
+
+    public List<Profile> getAllUsers() {
+        return profileRepository.findAll();
     }
 
     public Page<Group> getAllGroups(Optional<String> name, Integer page) {
@@ -120,13 +184,6 @@ public class AdminService {
         }
     }
 
-    private void updateGroupTeachers(Profile profile, Group group) {
-        List<Profile> teachers = group.getTeachers();
-        teachers.add(profile);
-        group.setTeachers(teachers);
-        groupRepository.save(group);
-    }
-
     private void updateGroupsMembers(Profile profile, Group group) {
         List<Profile> members = group.getMembers();
         members.add(profile);
@@ -157,38 +214,5 @@ public class AdminService {
         return profile;
     }
 
-    public void changeGroupForUser(Long userId, Long groupId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new BaseException("User with such id do not exists"));
-        Group group = groupRepository.findById(groupId)
-                .orElseThrow(() -> new BaseException("Group with such id do not exists"));
-        Profile profile = user.getProfile();
-        removeMemberFromGroup(profile.getId(), profile.getGroup());
-        updateGroupsMembers(profile, group);
-    }
-
-    private void removeTeacherFromGroup(Long teacherId, Group group) {
-        List<Profile> teachers = group.getTeachers();
-        Profile teacher = teachers.stream()
-                .filter(x -> x.getId().equals(teacherId))
-                .findFirst().orElse(null);
-        if(Objects.nonNull(teacher)) {
-            teachers.remove(teacher);
-            group.setTeachers(teachers);
-            groupRepository.save(group);
-        }
-    }
-
-    private void removeMemberFromGroup(Long memberId, Group group) {
-        List<Profile> members = group.getMembers();
-        Profile member = members.stream()
-                .filter(x -> x.getId().equals(memberId))
-                .findFirst().orElse(null);
-        if(Objects.nonNull(member)) {
-            members.remove(member);
-            group.setMembers(members);
-            groupRepository.save(group);
-        }
-    }
 
 }

@@ -9,17 +9,16 @@ import com.edu.EvaluationWeb.entity.Profile;
 import com.edu.EvaluationWeb.exception.BaseException;
 import com.edu.EvaluationWeb.mapper.ProfileMapper;
 import com.edu.EvaluationWeb.service.AdminService;
+import com.edu.EvaluationWeb.service.FilesService;
 import com.edu.EvaluationWeb.service.ValidationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -51,6 +50,7 @@ public class AdminController {
         model.addAttribute("groups", groups.getContent());
         model.addAttribute(CURRENT_PAGE_PARAM, page.orElse(0));
         model.addAttribute(TOTAL_PAGES_COUNT_PARAM, groups.getTotalPages());
+        name.ifPresent(n -> model.addAttribute("oldName", n));
         return "adminGroups";
     }
 
@@ -60,18 +60,63 @@ public class AdminController {
             adminService.addGroup(name);
         } catch(BaseException e) {
             model.addAttribute(ModelConstants.ERROR_MESSAGE_PARAM, e.getMessage());
+            return "errorPage";
         }
-        return "adminGroups";
+        return "redirect:/admin/groups";
     }
 
-    @PostMapping("/user-group")
-    public String editGroupForUser(Long userId, Long groupId, Model model) {
+    @GetMapping("/manage/groups/{id}")
+    public String managerGroupPage(@PathVariable Long id, Model model) {
         try {
-            adminService.changeGroupForUser(userId, groupId);
+            Group group = adminService.getGroupById(id);
+            adminService.loadGroupPhotos(group);
+            model.addAttribute("group", group);
+            List<Profile> teachers = adminService.getAllTeachers();
+            List<Profile> users = adminService.getAllUsers();
+            model.addAttribute("teachers", teachers.stream()
+                    .filter(teacher -> !group.getTeachers().contains(teacher))
+                    .collect(Collectors.toList()));
+            model.addAttribute("members", users.stream()
+                    .filter(member -> !member.getGroup().getId().equals(id))
+                    .collect(Collectors.toList()));
         } catch(BaseException e) {
             model.addAttribute(ModelConstants.ERROR_MESSAGE_PARAM, e.getMessage());
         }
-        return "adminGroups";
+        return "manageGroupPage";
+    }
+
+    @PostMapping("/manage/{groupId}/add-teachers")
+    public String addTeacherToGroup(@PathVariable Long groupId, Long id, Model model) {
+        try {
+            adminService.addTeacherToGroup(id, groupId);
+        } catch(BaseException e) {
+            model.addAttribute(ModelConstants.ERROR_MESSAGE_PARAM, e.getMessage());
+            return "errorPage";
+        }
+        return "redirect:/admin/manage/groups/" + groupId;
+    }
+
+    @PostMapping("/manage/{groupId}/add-members")
+    public String addMemberToGroup(@PathVariable Long groupId, Long id, Model model) {
+        try {
+            adminService.addMemberToGroup(id, groupId);
+        } catch(BaseException e) {
+            model.addAttribute(ModelConstants.ERROR_MESSAGE_PARAM, e.getMessage());
+            return "errorPage";
+        }
+        return "redirect:/admin/manage/groups/" + groupId;
+    }
+
+    @GetMapping("/manage/{groupId}/remove-teachers/{teacherId}")
+    public String removeTeacherFromGroup(@PathVariable Long groupId, @PathVariable Long teacherId,
+                                         Model model) {
+        try {
+            adminService.removeTeacherFromGroup(teacherId, groupId);
+        } catch(BaseException e) {
+            model.addAttribute(ModelConstants.ERROR_MESSAGE_PARAM, e.getMessage());
+            return "errorPage";
+        }
+        return "redirect:/admin/manage/groups/" + groupId;
     }
 
     @GetMapping("/users")

@@ -86,4 +86,18 @@ public class Profile {
     public void setUserId(User userId) {
         this.userId = userId;
     }
+
+    @Override
+    public int hashCode() {
+        return id.intValue();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if(obj instanceof Profile) {
+            Profile profile = (Profile) obj;
+            return profile.getId().equals(id);
+        }
+        return super.equals(obj);
+    }
 }
