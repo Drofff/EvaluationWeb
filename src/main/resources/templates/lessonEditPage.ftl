@@ -7,34 +7,10 @@
             integrity="sha256-WpOohJOqMqqyKL9FccASB9O0KwACQJpFTUBLTYOVvVU="
             crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/semantic-ui@2.4.2/dist/semantic.min.js"></script>
+    <link rel="stylesheet" href="/resources/style.css">
 </head>
 <body>
-<div class="ui menu">
-    <div class="header item">
-        Evaluation Web
-    </div>
-    <a class="item" href="/">
-        Schedule
-    </a>
-    <a class="item" href="/test">
-        Tests
-    </a>
-    <a class="item" href="/profile">
-        Profile
-    </a>
-    <a class="item" href="/teacher/manager">
-        Lessons Manager
-    </a>
-    <a class="item" href="/teacher/storage">
-        My Storage
-    </a>
-    <div class="right menu">
-        <div class="item">
-            <a class="ui primary button" href="/logout">Log out</a>
-        </div>
-    </div>
-
-</div>
+<#include "parts/teacherNavbar.ftl">
 <script>
     $(function() {
 

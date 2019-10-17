@@ -7,70 +7,10 @@
             integrity="sha256-WpOohJOqMqqyKL9FccASB9O0KwACQJpFTUBLTYOVvVU="
             crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/semantic-ui@2.4.2/dist/semantic.min.js"></script>
+    <link rel="stylesheet" href="/resources/style.css">
 </head>
 <body>
-<div class="ui menu">
-    <div class="header item">
-        Evaluation Web
-    </div>
-    <a class="item" href="/">
-        Schedule
-    </a>
-    <a class="item" href="/test">
-        Tests
-    </a>
-    <a class="item" href="/profile">
-        Profile
-    </a>
-    <a class="item" href="/teacher/manager">
-        Lessons Manager
-    </a>
-    <a class="item" href="/test/create">
-        Tests Manager
-    </a>
-    <a class="item" href="/teacher/storage">
-        My Storage
-    </a>
-    <div class="right menu">
-        <div class="item">
-            <a class="ui primary button" href="/logout">Log out</a>
-        </div>
-    </div>
-
-</div>
-<script>
-    var question_index = 1;
-
-    $(function() {
-
-    });
-
-    function add_question() {
-        question_index++;
-        $("#new_question").prepend(get_question_block());
-    }
-
-    function add_answer(q_index) {
-        var button_id = "new_answ_q" + q_index;
-        $("#" + button_id).prepend(get_answer_block(q_index));
-    }
-
-    function get_answer_block(q_index) {
-        return "<div class='ui checkbox'><input type='checkbox' name='aq" + q_index + "r' >" +
-        "</div><div class='field'><input type='text' name='aq" + q_index + "'></div>";
-    }
-
-    function get_question_block() {
-        return "<div class='field' style='margin-top: 7%;'><label>Question:</label>" +
-        "<div class='field'><input type='text' name='q" + question_index + "'></div></div><div class='field' " +
-         "style='margin-top: 7%; margin-left: 5%;'><label>Answers:</label><div class='ui checkbox'> " +
-         "<input type='checkbox' name='aq" + question_index + "r' ></div><div class='field'> " +
-         "<input type='text' name='aq" + question_index + "'></div><div id='new_answ_q" + question_index + "'>" +
-         "<a class='ui icon button' onclick='add_answer(" + question_index + ")'><i class='plus icon'></i> " +
-         "</a></div></div>";
-    }
-
-</script>
+<#include "parts/teacherNavbar.ftl">
 <#if messageError??>
 <div class="ui warning message" style="margin-left:10%; margin-right:10%;">
     <div class="header">
@@ -89,56 +29,61 @@
 
     <form class="ui form" action="/test/create" method="post" style="width: 60%; margin-left: 10%; margin-right:10%;">
         <h4 class="ui dividing header">Test Information</h4>
-        <div class="field">
+        <div class="field" style="width: 510px;">
             <label>Name</label>
                 <div class="field">
-                    <input type="text" name="name" placeholder="Test name">
+                    <input type="text" name="name" placeholder="Test name" pattern="[A-Za-zА-Яа-яЁё-іІїЇєЄ,\D, 0-9]{5,}" required>
                 </div>
         </div>
-        <div class="field">
+        <div class="field" style="display: inline-block;width: 510px;">
             <label>Duration</label>
-            <div class="field">
-                <input type="number" name="duration" placeholder="Duration"> Minutes
+            <div class="ui right labeled input">
+                <input type="number" name="duration" placeholder="Duration" required>
+                <div class="ui basic label">
+                    Minutes
+                </div>
             </div>
         </div>
-        <div class="field">
+        <br>
+        <div class="field" style="display: inline-block">
             <label>Deadline</label>
             <div class="field">
-                <input type="datetime-local" name="deadLine">
+                <input type="datetime-local" name="deadLine" required>
             </div>
         </div>
 
-        <div class="field">
+        <div class="field" style="display: inline-block">
             <label>Start time</label>
             <div class="field">
-                <input type="datetime-local" name="startTime">
+                <input type="datetime-local" name="startTime" required>
             </div>
         </div>
-
-        <div class="field" style="margin-top: 7%;">
+        <div class="ui divider"></div>
+        <div class="field" style=" width: 510px;">
             <label>Question:</label>
             <div class="field">
-                <input type="text" name="q1">
+                <input type="text" name="q1" required>
             </div>
         </div>
-        <div class="field" style="margin-top: 7%; margin-left: 5%;">
+        <div class="field" style="margin-left: 5%;">
             <label>Answers:</label>
-            <div class="ui checkbox">
-                <input type="checkbox" name="aq1r">
+            <div class="field testAnswer">
+                <input type="text" name="aq1" required>
             </div>
-            <div class="field">
-                <input type="text" name="aq1">
+            <div class="ui checkbox testCheckbox">
+                <input type="checkbox" name="aq1r" title="Check right answer">
+                <label></label>
             </div>
 
             <div id="new_answ_q1">
-                <a class="ui icon button" onclick="add_answer(1)">
+                <a class="ui icon button" onclick="add_answer(1)" style="display: block; width: 40px">
                     <i class="plus icon"></i>
                 </a>
             </div>
 
         </div>
-
-        <div id="new_question">
+        <div class="ui divider"></div>
+        <div id="new_question" style="margin-bottom: 1%">
             <a class="ui icon button" onclick="add_question()">
                 <i class="plus icon"></i>
             </a>
@@ -152,6 +97,7 @@
     </form>
 
 </div>
+<script src="/resources/main.js"></script>
 </body>
 
 </html>

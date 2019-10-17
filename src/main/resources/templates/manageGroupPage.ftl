@@ -4,21 +4,6 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/semantic-ui@2.4.2/dist/semantic.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/semantic-ui@2.4.2/dist/semantic.min.js"></script>
-    <script>
-        $(function() {
-            $("#add_member").click(function() {
-                $('#add_member_modal')
-                      .modal('show')
-                    ;
-            });
-            $("#add_teacher").click(function() {
-                $('#add_teacher_modal')
-                      .modal('show')
-                    ;
-            });
-            $(".ui.selection.dropdown").dropdown();
-        });
-    </script>
 </head>
 <body>
 
@@ -48,17 +33,17 @@
 </#if>
 
 <#if group??>
+<div class="ui segment" style="margin-left: 20%; top: 5%; width: 73%; height: 90%; ">
+    <h1 class="ui header">${group.name}</h1>
+    <div class="ui divider"></div>
 
-<h2 style="margin-left: 30%; margin-top: 5%;">${group.name}</h2>
-
-<div class="ui grid" style="margin-left: 20%; margin-top: 5%;">
-    <div class="seven wide column">
-        <h4><a>Teachers:</a></h4>
-        <div class="ui very relaxed list" style="margin-top: 5%;">
-            <#list group.teachers as user>
-            <#if user.photoUrl??>
+<div class="ui segment" style="float: left;width: 48.8%; height: 87%; overflow: auto">
+    <h1 class="ui header">Teachers</h1>
+    <div class="ui divider"></div>
+    <#list group.teachers as user>
+        <#if user.photoUrl??>
             <div class="item">
-                <img class="ui avatar image" src="${user.photoUrl}">
+                <img class="ui avatar image" src="${user.photoUrl}" style="float: left; width: 20%;height: 15%">
                 <div class="content">
                     <a class="header">${user.firstName} ${user.lastName}</a>
                     <div class="description">Email: <b>${user.userId.username}</b></div>
@@ -66,43 +51,46 @@
                     <a href="/admin/manage/${group.id}/remove-teachers/${user.id}">Remove</a>
                 </div>
             </div>
-            <#else>
+            <div class="ui divider"></div>
+        <#else>
             <div class="item">
                 <div class="content">
                     <a class="header">${user.userId.username}</a>
                     <div class="description">Position: <b>${user.position}</b></div>
                 </div>
             </div>
-            </#if>
-            </#list>
-        </div>
-    </div>
-    <div class="seven wide column">
-        <h4><a>Members:</a></h4>
-        <div class="ui very relaxed list" style="margin-top: 5%;">
-            <#list group.members as user>
-            <#if user.photoUrl??>
+            <div class="ui divider"></div>
+        </#if>
+    </#list>
+</div>
+<div class="ui segment" style="float: left;width: 48.8%; margin-left: 2%; height: 87%;overflow: auto">
+    <h1 class="ui header">Members</h1>
+    <div class="ui divider"></div>
+    <#list group.members as user>
+        <#if user.photoUrl??>
             <div class="item">
-                <img class="ui avatar image" src="${user.photoUrl}">
+                <img class="ui avatar image" src="${user.photoUrl}" style="float: left; width: 20%;height: 10%">
                 <div class="content">
                     <a class="header">${user.firstName} ${user.lastName}</a>
                     <div class="description">Email: <b>${user.userId.username}</b></div>
                     <div class="description">Position: <b>${user.position}</b></div>
                 </div>
             </div>
-            <#else>
+            <div class="ui divider"></div>
+        <#else>
             <div class="item">
                 <div class="content">
                     <a class="header">${user.userId.username}</a>
                     <div class="description">Position: <b>${user.position}</b></div>
                 </div>
             </div>
-            </#if>
-            </#list>
-        </div>
-    </div>
+            <div class="ui divider"></div>
+        </#if>
+    </#list>
 </div>
 
+
+</div>
 
 <div class="ui modal" id="add_teacher_modal">
     <i class="close icon"></i>
@@ -166,4 +154,6 @@
 
 </#if>
 
+<script src="/resources/main.js"></script>
 </body>
+</html>

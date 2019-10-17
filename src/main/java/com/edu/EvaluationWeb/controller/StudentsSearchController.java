@@ -38,6 +38,9 @@ public class StudentsSearchController {
             Page<Profile> myStudents = studentService.getMyStudents(page.orElse(0));
             List<Profile> studentsWithPhotos = myStudents.stream()
                     .peek(profile -> {
+                        if(Objects.isNull(profile.getPhotoUrl())) {
+                            return;
+                        }
                         String base64Photo = filesService.loadPhoto(profile.getPhotoUrl());
                         profile.setPhotoUrl(base64Photo);
                     }).collect(Collectors.toList());

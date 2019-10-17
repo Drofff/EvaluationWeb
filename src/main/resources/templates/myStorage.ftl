@@ -7,87 +7,11 @@
             integrity="sha256-WpOohJOqMqqyKL9FccASB9O0KwACQJpFTUBLTYOVvVU="
             crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/semantic-ui@2.4.2/dist/semantic.min.js"></script>
-    <script>
-    $(function() {
+    <link rel="stylesheet" href="/resources/style.css">
 
-        $('#selector').dropdown();
-        $('#selector_edit').dropdown();
-
-        <#if permissionsList??><#else>
-            $('#selector_edit').dropdown('set disabled');
-        </#if>
-
-        $("#upload-button").click(function() {
-            $('#file_upload').modal('show');
-        });
-
-        $("#close-modal").click(function() {
-            $('#file_upload').modal('hide');
-        });
-
-        $('#dropdown').dropdown();
-        $("#create_dir_button").click(function () {
-            $("#create_dir").modal('show');
-        });
-
-        $("#edit_button").click(function() {
-            $("#edit_permissions").modal('show');
-        });
-
-        $("#make_public").change(function() {
-
-            if( $("#make_public").prop('checked') === true) {
-                $("#selector").attr('class', 'ui fluid search disabled dropdown');
-                $("#selector").dropdown("clear");
-                $("#selector").val("");
-            } else {
-                $("#selector").attr('class', 'ui fluid search dropdown');
-            }
-
-        });
-
-        $("#make_public_permissions").change(function() {
-
-            if( $("#make_public_permissions").prop('checked') === true) {
-                $("#selector_edit").attr('class', 'ui fluid search disabled dropdown');
-                $("#selector_edit").dropdown("clear");
-                $("#selector_edit").val("");
-            } else {
-                $("#selector_edit").attr('class', 'ui fluid search dropdown');
-            }
-
-        });
-
-    });
-    </script>
 </head>
 <body>
-<div class="ui menu">
-    <div class="header item">
-        Evaluation Web
-    </div>
-    <a class="item" href="/">
-        Schedule
-    </a>
-    <a class="item" href="/test">
-        Tests
-    </a>
-    <a class="item" href="/profile">
-        Profile
-    </a>
-    <a class="item" href="/teacher/manager">
-        Lessons Manager
-    </a>
-    <a class="item active">
-        My Storage
-    </a>
-<div class="right menu">
-    <div class="item">
-        <a class="ui primary button" href="/logout">Log out</a>
-    </div>
-</div>
-
-</div>
+<#include "parts/teacherNavbar.ftl">
 
 <#if errorMessage??>
     <div class="ui negative message" style="width: 30%; margin-left: 35%; text-align: center;">
@@ -329,6 +253,8 @@
     </div>
 </div>
 
+
+<script src="/resources/main.js"></script>
 </body>
 
 </html>
