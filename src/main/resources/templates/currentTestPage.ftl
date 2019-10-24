@@ -58,39 +58,21 @@
 
 </div>
 <script>
-    console.log(${fullPercent});
-    console.log();
     var total_test_time = ${totalTestTime};
-    console.log(total_test_time);
     var time = ${timeToDeadline};
-    console.log(time);
-
     $(function() {
-
         $('#prog').progress();
-
-
         var fun_do = setInterval(function() {
-
             $.post("/test/time", { duration : total_test_time }, function(data) {
-
                 $("#timer").text(data['remaind_time'] + ' minutes');
-
                 time = data['remaind_time'];
-
-                if (data <= 0) {
-
+                if (time <= 0) {
                     alert('Sorry, time is out');
-
                     clearInterval(fun_do);
-
                 }
-
             });
         }, 1000 * 10);
-
     });
-
 </script>
 </body>
 </html>

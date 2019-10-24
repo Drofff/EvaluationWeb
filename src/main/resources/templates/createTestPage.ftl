@@ -35,6 +35,15 @@
                     <input type="text" name="name" placeholder="Test name" pattern="[A-Za-zА-Яа-яЁё-іІїЇєЄ,\D, 0-9]{5,}" required>
                 </div>
         </div>
+	    <div class="field" style="width: 510px;">
+		    <label>Groups</label>
+		    <select name="groups" multiple="" id="groups_selector" class="ui fluid search dropdown">
+			    <option value="">Select group</option>
+                <#list my_groups as group>
+				    <option value="${group.name}">${group.name}</option>
+                </#list>
+		    </select>
+	    </div>
         <div class="field" style="display: inline-block;width: 510px;">
             <label>Duration</label>
             <div class="ui right labeled input">
@@ -68,10 +77,10 @@
         <div class="field" style="margin-left: 5%;">
             <label>Answers:</label>
             <div class="field testAnswer">
-                <input type="text" name="aq1" required>
+                <input type="text" name="a1q1" required>
             </div>
             <div class="ui checkbox testCheckbox">
-                <input type="checkbox" name="aq1r" title="Check right answer">
+                <input type="checkbox" name="a1q1r" title="Check right answer">
                 <label></label>
             </div>
 

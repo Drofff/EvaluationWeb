@@ -39,4 +39,11 @@ public class ValidationException extends RuntimeException {
     public void setFieldErrors(Map<String, String> fieldErrors) {
         this.fieldErrors = fieldErrors;
     }
+
+    public void printFieldErrors() {
+    	for(Map.Entry<String, String> error : fieldErrors.entrySet()) {
+		    System.out.println("ERROR --- " + error.getKey() + " --- " + error.getValue());
+	    }
+    }
+
 }

@@ -1,27 +1,38 @@
 package com.edu.EvaluationWeb.utils;
 
-import com.edu.EvaluationWeb.entity.Answer;
-import com.edu.EvaluationWeb.entity.Question;
-import com.edu.EvaluationWeb.exception.BaseException;
-import org.springframework.validation.FieldError;
-
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
+import com.edu.EvaluationWeb.entity.Answer;
+import com.edu.EvaluationWeb.entity.Question;
+import com.edu.EvaluationWeb.exception.BaseException;
+import com.edu.EvaluationWeb.repository.AnswerRepository;
+
+@Component
 public class ParseUtils {
 
     private static final String QUESTION_NAME_PATTERN = "^q(\\d+)$";
-    private static final String ANSWER_NAME_PREFIX = "aq";
-    private static final String RIGHT_ANSWER_NAME_PREFIX = ANSWER_NAME_PREFIX;
-    private static final String RIGHT_ANSWER_NAME_SUFFIX = "r";
+    private static final String ANSWER_NAME_PATTERN = "^a(\\d+)q(\\d+)$";
+    private static final String RIGHT_ANSWER_NAME_PATTERN = "^a(\\d+)q(\\d+)r$";
     private static final String LOCAL_DATE_TIME_FORMAT_PATTERN = "uuuu-MM-dd'T'HH:mm";
 
-    private ParseUtils() {}
+    private final AnswerRepository answerRepository;
+
+    @Autowired
+    private ParseUtils(AnswerRepository answerRepository) {
+	    this.answerRepository = answerRepository;
+    }
 
     public static LocalDateTime parseDeadlineFromString(String dateTime) {
         try {
@@ -44,26 +55,57 @@ public class ParseUtils {
         return LocalDateTime.parse(dateTime, dateTimeFormatter);
     }
 
-    public static List<Question> parseQuestionsWithAnswersFromParametersMap(Map<String, String[]> parameters) {
+    public List<Question> parseQuestionsWithAnswersFromParametersMap(Map<String, String[]> parameters) {
         List<Question> questions = parseQuestions(parameters);
         questions.forEach(question -> setAnswersIntoQuestionFromParametersMap(question, parameters));
         return questions;
     }
 
-    private static void setAnswersIntoQuestionFromParametersMap(Question question, Map<String, String[]> parameters) {
+	private static List<Question> parseQuestions(Map<String, String[]> parameters) {
+		return parameters.entrySet().stream()
+				.filter(param -> matches(param.getKey(), QUESTION_NAME_PATTERN))
+				.map(ParseUtils::parseQuestionFromParametersMapEntry)
+				.filter(Objects::nonNull)
+				.collect(Collectors.toList());
+	}
+
+    private void setAnswersIntoQuestionFromParametersMap(Question question, Map<String, String[]> parameters) {
         Integer questionIndex = extractQuestionIndexFromName(question.getParameterName());
-        List<Answer> answers = parseAnswersWithQuestionIndex(questionIndex, parameters);
-        question.setAnswers(answers);
-        String rightAnswer = parseRightAnswerByQuestionIndex(questionIndex, parameters);
+        Map<String, Answer> answers = parseAnswersWithQuestionIndex(questionIndex, parameters);
+        Map<String, Answer> savedAnswers = saveAnswers(answers);
+	    question.setAnswers(new ArrayList<>(savedAnswers.values()));
+	    List<String> rightAnswers = parseRightAnswers(parameters);
+        String rightAnswer = buildRightAnswerString(rightAnswers, savedAnswers);
         question.setRightAnswer(rightAnswer);
     }
 
-    private static List<Question> parseQuestions(Map<String, String[]> parameters) {
-        return parameters.entrySet().stream()
-                .filter(param -> matches(param.getKey(), QUESTION_NAME_PATTERN))
-                .map(ParseUtils::parseQuestionFromParametersMapEntry)
-                .filter(Objects::nonNull)
-                .collect(Collectors.toList());
+    private static String buildRightAnswerString(List<String> rightAnswers, Map<String, Answer> answers) {
+    	List<String> rightAnswersNames = getAnswersNamesFromRightAnswers(rightAnswers);
+    	return answers.entrySet().stream()
+			    .filter(answer -> rightAnswersNames.contains(answer.getKey()))
+			    .map(answer -> answer.getValue().getId().toString())
+			    .collect(Collectors.joining(","));
+    }
+
+    private static List<String> getAnswersNamesFromRightAnswers(List<String> rightAnswers) {
+    	return rightAnswers.stream()
+			    .map(rightAnswer -> rightAnswer.replace("r", ""))
+			    .collect(Collectors.toList());
+    }
+
+    private Map<String, Answer> saveAnswers(Map<String, Answer> answers) {
+    	return answers.entrySet().stream()
+			    .collect(Collectors.toMap(Map.Entry::getKey, answer -> saveAnswer(answer.getValue())));
+    }
+
+    private Answer saveAnswer(Answer answer) {
+    	return answerRepository.save(answer);
+    }
+
+    private static List<String> parseRightAnswers(Map<String, String[]> parameters) {
+    	return parameters.keySet().stream()
+			    .filter(param -> matches(param, RIGHT_ANSWER_NAME_PATTERN))
+			    .collect(Collectors.toList());
     }
 
     private static Question parseQuestionFromParametersMapEntry(Map.Entry<String, String[]> entry) {
@@ -74,27 +116,34 @@ public class ParseUtils {
         return null;
     }
 
-    private static String parseRightAnswerByQuestionIndex(Integer questionIndex, Map<String, String[]> parameters) {
-        String rightAnswerName = RIGHT_ANSWER_NAME_PREFIX + questionIndex + RIGHT_ANSWER_NAME_SUFFIX;
-        if(parameters.containsKey(rightAnswerName)) {
-            String [] rightAnswer = parameters.get(rightAnswerName);
-            if(Objects.nonNull(rightAnswer) && rightAnswer.length == 1) {
-                return rightAnswer[0];
-            }
-        }
-        return null;
+    private static Map<String, Answer> parseAnswersWithQuestionIndex(Integer questionIndex, Map<String, String[]> parameters) {
+        Map<String, String> answers = getAnswersFromParameters(parameters);
+        Map<String, String> answersWithQuestionIndex = filterAnswersByQuestionIndex(questionIndex, answers);
+        return wrapAnswers(answersWithQuestionIndex);
     }
 
-    private static List<Answer> parseAnswersWithQuestionIndex(Integer questionIndex, Map<String, String[]> parameters) {
-        String answerName = ANSWER_NAME_PREFIX + questionIndex;
-        if(!parameters.containsKey(answerName)) {
-            return Collections.emptyList();
-        }
-        String [] answerValue = parameters.get(answerName);
-        if(Objects.isNull(answerValue) || answerValue.length == 0) {
-            return Collections.emptyList();
-        }
-        return wrapAnswers(answerValue);
+    private static Map<String, String> getAnswersFromParameters(Map<String, String[]> parameters) {
+    	return parameters.entrySet().stream()
+			    .filter(param -> matches(param.getKey(), ANSWER_NAME_PATTERN))
+			    .collect(Collectors.toMap(Map.Entry::getKey, param -> getAnswerValue(param.getValue())));
+    }
+
+    private static String getAnswerValue(String [] value) {
+    	if(Objects.nonNull(value) && value.length > 0) {
+    		return value[0];
+	    }
+    	throw new BaseException("Invalid answer provided");
+    }
+
+    private static Map<String, String> filterAnswersByQuestionIndex(Integer questionIndex, Map<String, String> answers) {
+    	String answerWithQuestionIndexPattern = getAnswerNamePatternWithQuestionIndex(questionIndex);
+    	return answers.entrySet().stream()
+			    .filter(param -> matches(param.getKey(), answerWithQuestionIndexPattern))
+			    .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+    }
+
+    private static String getAnswerNamePatternWithQuestionIndex(Integer questionIndex) {
+    	return ANSWER_NAME_PATTERN.replaceFirst("(\\d+)", questionIndex.toString());
     }
 
     private static Integer extractQuestionIndexFromName(String name) {
@@ -105,10 +154,9 @@ public class ParseUtils {
         return null;
     }
 
-    private static List<Answer> wrapAnswers(String [] answers) {
-        return Arrays.stream(answers)
-                .map(ParseUtils::wrapAnswer)
-                .collect(Collectors.toList());
+    private static Map<String, Answer> wrapAnswers(Map<String, String> answers) {
+        return answers.entrySet().stream()
+                .collect(Collectors.toMap(Map.Entry::getKey, param -> wrapAnswer(param.getValue())));
     }
 
     private static Answer wrapAnswer(String answerText) {

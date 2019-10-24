@@ -1,31 +1,55 @@
 package com.edu.EvaluationWeb.controller;
 
-import com.edu.EvaluationWeb.component.UserContext;
-import com.edu.EvaluationWeb.dto.TestDto;
-import com.edu.EvaluationWeb.dto.TestResultDto;
-import com.edu.EvaluationWeb.entity.*;
-import com.edu.EvaluationWeb.exception.BaseException;
-import com.edu.EvaluationWeb.exception.ValidationException;
-import com.edu.EvaluationWeb.mapper.TestDtoMapper;
-import com.edu.EvaluationWeb.mapper.TestResultMapper;
-import com.edu.EvaluationWeb.repository.*;
-import com.edu.EvaluationWeb.service.FilesService;
-import com.edu.EvaluationWeb.service.TestService;
-import com.edu.EvaluationWeb.service.ValidationService;
-import com.edu.EvaluationWeb.utils.ParseUtils;
+import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import javax.servlet.http.HttpServletRequest;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 
-import javax.servlet.http.HttpServletRequest;
-import java.time.LocalDateTime;
-import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.*;
-import java.util.stream.Collectors;
+import com.edu.EvaluationWeb.component.UserContext;
+import com.edu.EvaluationWeb.dto.TestDto;
+import com.edu.EvaluationWeb.dto.TestResultDto;
+import com.edu.EvaluationWeb.entity.Group;
+import com.edu.EvaluationWeb.entity.Profile;
+import com.edu.EvaluationWeb.entity.Question;
+import com.edu.EvaluationWeb.entity.Test;
+import com.edu.EvaluationWeb.entity.TestResult;
+import com.edu.EvaluationWeb.entity.User;
+import com.edu.EvaluationWeb.exception.BaseException;
+import com.edu.EvaluationWeb.exception.ValidationException;
+import com.edu.EvaluationWeb.mapper.TestDtoMapper;
+import com.edu.EvaluationWeb.mapper.TestResultMapper;
+import com.edu.EvaluationWeb.repository.AnswerRepository;
+import com.edu.EvaluationWeb.repository.GroupRepository;
+import com.edu.EvaluationWeb.repository.ProfileRepository;
+import com.edu.EvaluationWeb.repository.TestRepository;
+import com.edu.EvaluationWeb.repository.TestResultRepository;
+import com.edu.EvaluationWeb.service.TestService;
+import com.edu.EvaluationWeb.service.ValidationService;
+import com.edu.EvaluationWeb.utils.ParseUtils;
 
 @Controller
 @RequestMapping("/test")
@@ -38,7 +62,7 @@ public class TestController {
     private final AnswerRepository answerRepository;
     private final ValidationService validationService;
     private final TestResultMapper testResultMapper;
-    private final FilesService filesService;
+    private final ParseUtils parseUtils;
     private final TestDtoMapper testDtoMapper;
     private final UserContext userContext;
     private final GroupRepository groupRepository;
@@ -47,7 +71,7 @@ public class TestController {
     public TestController(ProfileRepository profileRepository, TestService testService,
                           TestRepository testRepository, TestResultRepository testResultRepository,
                           AnswerRepository answerRepository, ValidationService validationService,
-                          TestResultMapper testResultMapper, FilesService filesService,
+                          TestResultMapper testResultMapper, ParseUtils parseUtils,
                           TestDtoMapper testDtoMapper, UserContext userContext, GroupRepository groupRepository) {
         this.profileRepository = profileRepository;
         this.testService = testService;
@@ -57,7 +81,7 @@ public class TestController {
         this.answerRepository = answerRepository;
         this.validationService = validationService;
         this.testResultMapper = testResultMapper;
-        this.filesService = filesService;
+        this.parseUtils = parseUtils;
         this.testDtoMapper = testDtoMapper;
         this.userContext = userContext;
         this.groupRepository = groupRepository;
@@ -239,10 +263,9 @@ public class TestController {
             //info about questions fulfil
 
             List<String> answers = testService.getAnswers(user);
-
             Map<Integer, Boolean> questionsWithResult = new LinkedHashMap<>();
-
-            model.addAttribute("fullPercent", ( ( answers.size() / questionList.size() ) * 100 ) );
+            int fullPercent = convertToPercents(questionList.size(), answers.size());
+            model.addAttribute("fullPercent", fullPercent);
 
             for (int i = 1; i <= numberOfQuestions; i++) {
 
@@ -306,6 +329,13 @@ public class TestController {
         }
 
     }
+
+    private Integer convertToPercents(double total, double part) {
+    	double percents = part / total * 100;
+    	return (int) percents;
+    }
+
+    //TODO: max duration for test is 999
 
     @PostMapping("/answer")
     public String answerForQuestion(@RequestParam String question, @RequestParam(required = false) String answer) {
@@ -475,6 +505,7 @@ public class TestController {
             testService.save(newTest);
             model.addAttribute("messageSuccess", "Test was successfully saved");
         } catch(ValidationException e) {
+        	e.printFieldErrors();
             model.addAttribute("messageError", e.getMessage());
             model.mergeAttributes(e.getFieldErrors());
         }
@@ -488,6 +519,9 @@ public class TestController {
 
     private Test toTestEntityWithQuestionsFromParams(TestDto testDto, Map<String, String[]> params) {
         Test entity = testDtoMapper.toEntity(testDto);
+        if(Objects.isNull(entity.getActive())) {
+        	entity.setActive(false);
+        }
         if(Objects.nonNull(testDto.getDeadLine())) {
             LocalDateTime deadline = ParseUtils.parseDeadlineFromString(testDto.getDeadLine());
             entity.setDeadLine(deadline);
@@ -496,7 +530,7 @@ public class TestController {
             LocalDateTime startTime = ParseUtils.parseStartTimeFromString(testDto.getStartTime());
             entity.setStartTime(startTime);
         }
-        List<Question> questions = ParseUtils.parseQuestionsWithAnswersFromParametersMap(params);
+        List<Question> questions = parseUtils.parseQuestionsWithAnswersFromParametersMap(params);
         entity.setQuestions(new HashSet<>(questions));
         return entity;
     }

@@ -12,7 +12,7 @@ import com.edu.EvaluationWeb.exception.StorageException;
 import com.edu.EvaluationWeb.repository.GroupRepository;
 import com.edu.EvaluationWeb.repository.ProfileRepository;
 import com.edu.EvaluationWeb.repository.StorageNodeRepository;
-import com.sun.org.apache.xml.internal.security.utils.Base64;
+import java.util.Base64;
 import org.apache.tika.Tika;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -336,7 +336,7 @@ public class StorageService {
 
      private String generatePhysicalName(String logicalPath) {
          String [] pathSegments = logicalPath.split("\\.");
-         String physicalName = Base64.encode(logicalPath.getBytes());
+         String physicalName = new String(Base64.getEncoder().encode(logicalPath.getBytes()));
          return physicalName + "." + pathSegments[pathSegments.length - 1];
      }
 

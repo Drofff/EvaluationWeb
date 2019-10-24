@@ -69,27 +69,30 @@ $('.special.cards .image').dimmer({
 
 //createTestPage
 var question_index = 1;
+var answer_index = 1;
 
 $(function() {
-
+    $("#groups_selector").dropdown();
 });
 
 function add_question() {
     question_index++;
+    answer_index = 1;
     $("#new_question").prepend(get_question_block());
 }
 
 function add_answer(q_index) {
+    answer_index++;
     var button_id = "new_answ_q" + q_index;
     $("#" + button_id).prepend(get_answer_block(q_index));
 }
 
 function get_answer_block(q_index) {
     return "<div class='field testAnswer'>" +
-                "<input type='text' name='aq" + q_index + "' required>" +
+                "<input type='text' name='a" + answer_index + "q" + q_index + "' required>" +
            "</div>" +
            "<div class='ui checkbox testCheckbox' style='left: 5px'>" +
-                "<input type='checkbox' name='aq" + q_index + "r' title='Check right answer'>"+
+                "<input type='checkbox' name='a" + answer_index + "q" + q_index + "r' title='Check right answer'>"+
                 "<label></label>" +
             "</div>";
 }
@@ -105,10 +108,10 @@ function get_question_block() {
             "<div class='field' style='margin-left: 5%;'>" +
                 "<label>Answers:</label>" +
                 "<div class='field testAnswer'>" +
-                    "<input type='text' name='aq" + question_index + "' required>" +
+                    "<input type='text' name='a1q" + question_index + "' required>" +
                 "</div> " +
                 "<div class='ui checkbox testCheckbox'>" +
-                    "<input type='checkbox' name='aq" + question_index +"r' title='Check right answer'>" +
+                    "<input type='checkbox' name='a1q" + question_index +"r' title='Check right answer'>" +
                     "<label></label>" +
                 "</div>"+
                 "" +
