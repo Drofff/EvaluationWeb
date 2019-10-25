@@ -335,8 +335,6 @@ public class TestController {
     	return (int) percents;
     }
 
-    //TODO: max duration for test is 999
-
     @PostMapping("/answer")
     public String answerForQuestion(@RequestParam String question, @RequestParam(required = false) String answer) {
 
@@ -491,6 +489,8 @@ public class TestController {
     @PreAuthorize("hasAuthority('TEACHER')")
     public String createTest(TestDto testDto, Model model, HttpServletRequest request) {
         Map<String, String[]> map = request.getParameterMap();
+        model.addAttribute("oldParams", map.entrySet().stream()
+                                .collect(Collectors.toMap(Map.Entry::getKey, param -> param.getValue()[0])));
         setMyGroups(model);
         Test newTest = null;
         try {
@@ -501,6 +501,10 @@ public class TestController {
             model.addAttribute("messageError", e.getMessage());
             return "createTestPage";
         }
+        model.addAttribute("enteredValue", newTest);
+        model.addAttribute("selectedGroupsNames", newTest.getGroups().stream()
+                                .map(Group::getName)
+                                .collect(Collectors.toList()));
         try {
             testService.save(newTest);
             model.addAttribute("messageSuccess", "Test was successfully saved");

@@ -8,6 +8,57 @@
             crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/semantic-ui@2.4.2/dist/semantic.min.js"></script>
     <link rel="stylesheet" href="/resources/style.css">
+	<script>
+		var questionIndexRegex = /.*q([0-9]+).*/;
+		var questionRegex = /^q([0-9]+)$/;
+		$(function() {
+		    var params = [];
+		    <#if oldParams??>
+			    <#list oldParams as key, value>
+					var key = '${key}';
+					var value = '${value}';
+			        if(key.match(questionIndexRegex)) {
+			            params.push([key, value]);
+			        }
+			    </#list>
+            </#if>
+			var indexes = getAllIndexes(params);
+			indexes.forEach(function(index) {
+                addQuestionWithAnswers(index, params);
+			});
+		});
+
+		function getAllIndexes(params) {
+		    var indexes = [];
+		    params.forEach(function(param) {
+		        var question = param[0].match(questionRegex);
+		        if(question && question[1] > 1) {
+                    indexes.push(question[1]);
+                }
+		    });
+		    return indexes;
+		}
+
+		function addQuestionWithAnswers(index, params) {
+		    var questionRegex = new RegExp('^q' + index + '$');
+		    var question = '';
+		    var name = '';
+		    params.forEach(function(param) {
+		        if(param[0].match(questionRegex)) {
+		            name = param[0];
+		            question = param[1];
+		        }
+		    });
+		    if(question.length > 1) {
+                addQuestion(name, question);
+		    }
+		}
+
+		function addQuestion(name, value) {
+            add_question();
+            $("#" + name).attr('value', value);
+		}
+	</script>
 </head>
 <body>
 <#include "parts/teacherNavbar.ftl">
@@ -31,56 +82,60 @@
         <h4 class="ui dividing header">Test Information</h4>
         <div class="field" style="width: 510px;">
             <label>Name</label>
-                <div class="field">
-                    <input type="text" name="name" placeholder="Test name" pattern="[A-Za-zА-Яа-яЁё-іІїЇєЄ,\D, 0-9]{5,}" required>
+                <div class="field <#if nameError??>error</#if>">
+                    <input type="text" <#if enteredValue?? && enteredValue.name??>value="${enteredValue.name}"</#if> name="name" placeholder="Test name" pattern="[A-Za-zА-Яа-яЁё-іІїЇєЄ,\D, 0-9]{1,}" required>
+	                <#if nameError??><p style="color:red">${nameError}</p></#if>
                 </div>
         </div>
-	    <div class="field" style="width: 510px;">
+	    <div class="field <#if groupError??>error</#if>" style="width: 510px;">
 		    <label>Groups</label>
 		    <select name="groups" multiple="" id="groups_selector" class="ui fluid search dropdown">
 			    <option value="">Select group</option>
                 <#list my_groups as group>
-				    <option value="${group.name}">${group.name}</option>
+				    <option <#if selectedGroupsNames?? && selectedGroupsNames?seq_contains(group.name)>selected</#if> value="${group.name}">${group.name}</option>
                 </#list>
 		    </select>
+            <#if groupError??><p style="color:red">${groupError}</p></#if>
 	    </div>
-        <div class="field" style="display: inline-block;width: 510px;">
+        <div class="field <#if durationError??>error</#if>" style="display: inline-block;width: 510px;">
             <label>Duration</label>
             <div class="ui right labeled input">
-                <input type="number" name="duration" placeholder="Duration" required>
+                <input type="number" <#if enteredValue?? && enteredValue.duration??>value="${enteredValue.duration}"</#if> name="duration" placeholder="Duration" required>
                 <div class="ui basic label">
                     Minutes
                 </div>
             </div>
+            <#if durationError??><p style="color:red">${durationError}</p></#if>
         </div>
         <br>
-        <div class="field" style="display: inline-block">
+        <div class="field <#if deadlineError??>error</#if>" style="display: inline-block">
             <label>Deadline</label>
             <div class="field">
-                <input type="datetime-local" name="deadLine" required>
+                <input type="datetime-local" name="deadLine" <#if enteredValue?? && enteredValue.deadLine??>value="${enteredValue.deadLine}"</#if> required>
+                <#if deadlineError??><p style="color:red">${deadlineError}</p></#if>
             </div>
         </div>
 
-        <div class="field" style="display: inline-block">
+        <div class="field <#if startTimeError??>error</#if>" style="display: inline-block">
             <label>Start time</label>
             <div class="field">
-                <input type="datetime-local" name="startTime" required>
+                <input type="datetime-local" name="startTime" <#if enteredValue?? && enteredValue.startTime??>value="${enteredValue.startTime}"</#if> required>
             </div>
         </div>
         <div class="ui divider"></div>
         <div class="field" style=" width: 510px;">
             <label>Question:</label>
             <div class="field">
-                <input type="text" name="q1" required>
+                <input type="text" name="q1" <#if oldParams?? && oldParams.q1??>value="${oldParams.q1}"</#if> required>
             </div>
         </div>
         <div class="field" style="margin-left: 5%;">
             <label>Answers:</label>
             <div class="field testAnswer">
-                <input type="text" name="a1q1" required>
+                <input type="text" name="a1q1" <#if oldParams?? && oldParams.a1q1??>value="${oldParams.a1q1}"</#if> required>
             </div>
             <div class="ui checkbox testCheckbox">
-                <input type="checkbox" name="a1q1r" title="Check right answer">
+                <input type="checkbox" name="a1q1r" <#if oldParams?? && oldParams.a1q1r??>checked</#if> title="Check right answer">
                 <label></label>
             </div>
 

@@ -1,6 +1,8 @@
 package com.edu.EvaluationWeb.entity;
 
 import javax.persistence.*;
+import javax.validation.constraints.Max;
+import javax.validation.constraints.Min;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import java.time.LocalDateTime;
@@ -24,6 +26,8 @@ public class Test {
     private Integer numberOfQuestions;
 
     @NotNull
+    @Max(value = 999)
+    @Min(value = 1)
     private Integer duration;
 
     private Boolean active;
