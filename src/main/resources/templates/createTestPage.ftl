@@ -40,24 +40,50 @@
 		}
 
 		function addQuestionWithAnswers(index, params) {
-		    var questionRegex = new RegExp('^q' + index + '$');
+		    var question = parseQuestion(index, params);
+		    var answers = parseAnswers(index, params);
+		    add_pre_defined_question(question, answers);
+		}
+
+		function parseQuestion(index, params) {
+		    var name = 'q' + index;
 		    var question = '';
-		    var name = '';
 		    params.forEach(function(param) {
-		        if(param[0].match(questionRegex)) {
-		            name = param[0];
+		        if(param[0] === name) {
 		            question = param[1];
 		        }
 		    });
-		    if(question.length > 1) {
-                addQuestion(name, question);
-		    }
+		    return question;
 		}
 
-		function addQuestion(name, value) {
-            add_question();
-            $("#" + name).attr('value', value);
+		function parseAnswers(questionIndex, params) {
+		    var answerPattern = new RegExp('^a(\\d+)q' + questionIndex + '$');
+		    var answers = [];
+		    params.forEach(function(param) {
+		        if(param[0].match(answerPattern)) {
+		            var is_right = is_right_answer(param[0], params);
+		            var answer = {
+		                'name' : param[0],
+		                'value' : param[1],
+		                'is_right' : is_right
+		            };
+		            answers.push(answer);
+		        }
+		    });
+		    return answers;
 		}
+
+		function is_right_answer(answerName, params) {
+		    var rightAnswerName = answerName + 'r';
+		    var isRight = false;
+		    params.forEach(function(param) {
+		        if(param[0] === rightAnswerName) {
+		            isRight = true;
+		        }
+		    });
+		    return isRight;
+		}
+
 	</script>
 </head>
 <body>
@@ -138,6 +164,18 @@
                 <input type="checkbox" name="a1q1r" <#if oldParams?? && oldParams.a1q1r??>checked</#if> title="Check right answer">
                 <label></label>
             </div>
+
+            <#if firstQuestionAdditionalAnswers??>
+                <#list firstQuestionAdditionalAnswers as answer>
+                    <div class="field testAnswer">
+                        <input type="text" name="${answer.name}" value="${answer.answer}" required>
+                    </div>
+                    <div class="ui checkbox testCheckbox">
+                        <input type="checkbox" name="${answer.name}r" <#if answer.right>checked</#if> title="Check right answer">
+                    <label></label>
+                    </div>
+                </#list>
+            </#if>
 
             <div id="new_answ_q1">
                 <a class="ui icon button" onclick="add_answer(1)" style="display: block; width: 40px">

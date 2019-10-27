@@ -81,10 +81,42 @@ function add_question() {
     $("#new_question").prepend(get_question_block());
 }
 
+function add_pre_defined_question(question, answers) {
+    question_index++;
+    question_field = get_question_field_with_value(question);
+    answer_fields =  "<div class='field' style='margin-left: 5%;'>" +
+                                    "<label>Answers:</label>";
+    answers.forEach(function(answ) {
+        answer_fields += get_answer_block_with_value(answ['name'], answ['value'], answ['is_right']);
+    });
+    answer_fields += "<div id='new_answ_q" + question_index + "'>" +
+        "<a class='ui icon button' onclick='add_answer(" + question_index + ")' style='display: block; width: 40px'>" +
+                         "<i class='plus icon'></i> " +
+                     "</a>" +
+                 "</div>" +
+             "</div>" +
+             "<div class='ui divider'></div>";
+     $("#new_question").prepend(question_field + answer_fields);
+}
+
 function add_answer(q_index) {
     answer_index++;
     var button_id = "new_answ_q" + q_index;
     $("#" + button_id).prepend(get_answer_block(q_index));
+}
+
+function get_answer_block_with_value(name, val, is_right, is_last) {
+    var right_answer_checked = '';
+    if(is_right) {
+        right_answer_checked = 'checked';
+    }
+    return "<div class='field testAnswer'>" +
+                    "<input type='text' value='" + val + "' name='" + name + "' required>" +
+               "</div>" +
+               "<div class='ui checkbox testCheckbox' style='left: 5px'>" +
+                    "<input type='checkbox' name='" + name + "r' " + right_answer_checked + " title='Check right answer'>"+
+                    "<label></label>" +
+                "</div>";
 }
 
 function get_answer_block(q_index) {
@@ -95,6 +127,15 @@ function get_answer_block(q_index) {
                 "<input type='checkbox' name='a" + answer_index + "q" + q_index + "r' title='Check right answer'>"+
                 "<label></label>" +
             "</div>";
+}
+
+function get_question_field_with_value(val) {
+    return "<div class='field' style='width: 510px;'>" +
+                           "<label>Question:</label>" +
+                           "<div class='field'>" +
+                               "<input type='text' value='" + val + "' name='q" + question_index + "' required>" +
+                           "</div>" +
+                       "</div>";
 }
 
 function get_question_block() {

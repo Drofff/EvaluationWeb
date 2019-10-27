@@ -1,5 +1,7 @@
 package com.edu.EvaluationWeb.entity;
 
+import com.edu.EvaluationWeb.component.validation.MinLength;
+
 import javax.persistence.*;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
@@ -22,6 +24,7 @@ public class Question {
     private List<Answer> answers;
 
     @NotBlank
+    @MinLength(message = "At least one right answer is required")
     private String rightAnswer;
 
     @Transient

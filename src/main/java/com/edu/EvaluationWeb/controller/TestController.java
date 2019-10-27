@@ -16,6 +16,7 @@ import java.util.stream.Collectors;
 
 import javax.servlet.http.HttpServletRequest;
 
+import com.edu.EvaluationWeb.dto.AnswerDto;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -489,8 +490,10 @@ public class TestController {
     @PreAuthorize("hasAuthority('TEACHER')")
     public String createTest(TestDto testDto, Model model, HttpServletRequest request) {
         Map<String, String[]> map = request.getParameterMap();
-        model.addAttribute("oldParams", map.entrySet().stream()
-                                .collect(Collectors.toMap(Map.Entry::getKey, param -> param.getValue()[0])));
+        Map<String, String> oldParams = request.getParameterMap().entrySet().stream()
+                .collect(Collectors.toMap(Map.Entry::getKey, param -> param.getValue()[0]));
+        model.addAttribute("oldParams", oldParams);
+        model.addAttribute("firstQuestionAdditionalAnswers", getAdditionalAnswersForFirstQuestionFromParams(oldParams));
         setMyGroups(model);
         Test newTest = null;
         try {
@@ -514,6 +517,27 @@ public class TestController {
             model.mergeAttributes(e.getFieldErrors());
         }
         return "createTestPage";
+    }
+
+    private List<AnswerDto> getAdditionalAnswersForFirstQuestionFromParams(Map<String, String> params) {
+        String pattern = "^a([02-9]|\\d{2,})q1$";
+        return params.entrySet().stream()
+                .filter(param -> ParseUtils.matches(param.getKey(), pattern))
+                .map(param -> toAnswerDto(param, params))
+                .collect(Collectors.toList());
+    }
+
+    private AnswerDto toAnswerDto(Map.Entry<String, String> param, Map<String, String> params) {
+        AnswerDto answerDto = new AnswerDto();
+        answerDto.setName(param.getKey());
+        answerDto.setAnswer(param.getValue());
+        answerDto.setRight(isRightAnswer(answerDto.getName(), params));
+        return answerDto;
+    }
+
+    private boolean isRightAnswer(String answerName, Map<String, String> params) {
+        String rightAnswerKey = answerName + "r";
+        return params.containsKey(rightAnswerKey);
     }
 
     private void setMyGroups(Model model) {
