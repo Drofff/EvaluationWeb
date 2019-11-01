@@ -75,33 +75,36 @@
             </div>
             <h4 style="margin-left: 7%;"><i class="address card icon"></i> Position: ${profileData.position}</h4>
             <h4 style="margin-left: 7%;"><i class="users icon"></i> Group: ${profileData.groupName}</h4>
-            <h4 style="margin-left: 7%;"><i class="users icon"></i>Email: ${profileData.email}</h4>
+	        <h4 style="margin-left: 7%;">
+		        <a class="ui primary button" href="/mail/send?receiverId=${user_id}">
+		            Send message
+	            </a>
+	        </h4>
             <div class="ui segment groups">
                 <h1 class="ui header">Groups</h1>
                 <div class="ui divider"></div>
-                <p>Some content, some content, some content</p>
-                <p>Some content, some content, some content</p>
-                <p>Some content, some content, some content</p>
-                <p>Some content, some content, some content</p>
-                <p>Some content, some content, some content</p>
-                <p>Some content, some content, some content</p>
-                <p>Some content, some content, some content</p>
+                <#if profileData.studentsGroups??>
+	            <div class="ui list">
+                    <#list profileData.studentsGroups as studentGroup>
+	                    <div class="item">
+                            ${studentGroup}
+	                    </div>
+                    </#list>
+	            </div>
+                </#if>
             </div>
             <div class="ui segment subject">
-                <h1 class="ui header">Subject</h1>
+                <h1 class="ui header">Subjects</h1>
                 <div class="ui divider"></div>
-                <p>
-                    <#if profileData.subjects??>
+                <#if profileData.subjects??>
+		            <div class="ui list">
                         <#list profileData.subjects as subject>
-                            ${subject}
+				            <div class="item">
+                                ${subject}
+				            </div>
                         </#list>
-                    </#if>
-                    <#if profileData.studentsGroups??>
-                        <#list profileData.studentsGroups as studentGroup>
-                            ${studentGroup}
-                        </#list>
-                    </#if>
-                </p>
+		            </div>
+                </#if>
             </div>
 
         </div>

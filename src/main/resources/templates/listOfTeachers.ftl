@@ -17,66 +17,43 @@
     </div>
 </#if>
 <div class="ui segment grid">
-    <div class="ui left fixed vertical menu" style="margin-top:5%;">
-        <div class="item">
-            <img class="ui tiny circular image" src="${photoUrl}" style="margin-left: 22%;">
-            <h4 class="ui header">${name}</h4>
-        </div>
-        <a class="item" href="/test">My Tests</a>
-        <a class="item" href="/test/grades">Grades</a>
-        <a class="item">Teachers</a>
-    </div>
-    <div style="margin-left : 20%; height: 1200px; overflow: auto">
+    <div style="margin-left : 10%; margin-top: 3%; margin-bottom: 5%;">
 
         <div class="ui special cards">
-            <div class="card">
-                <div class="blurring dimmable image">
-                    <div class="ui dimmer">
-                        <div class="content">
-                            <div class="center">
-                                <a href="/profile/view/${teacherId}" class="ui inverted button">View profile</a>
-                            </div>
-                        </div>
-                    </div>
-                    <img src="https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940">
-                </div>
-                <div class="content">
-                    <a class="header">${TeachersNmae}</a>
-                    <div class="meta">
-                        <span class="date">${WhenJoinedToUniversity}</span><br>
-                    </div>
-                </div>
-                <div class="extra content">
-                    <a>
-                        <i class="users icon"></i>
-                        ${numberOfClasses}
-                    </a>
-                </div>
-            </div>
-        </div>
-        <div class="ui buttons" style="margin-left: 28%; margin-top: 3%;">
-            <#if prevURL??>
-                <a class="ui labeled icon button" href="${prevURL}">
-                    <i class="left chevron icon"></i>
-                    Previous
-                </a>
-            <#else>
-                <a class="ui labeled icon button disabled">
-                    <i class="left chevron icon"></i>
-                    Previous
-                </a>
+
+	        <#if !teachers?? || teachers?size == 0>
+	            <h3 class="header">You have not any teachers yet</h3>
+	        </#if>
+
+	        <#if teachers??>
+		        <#list teachers as teacher>
+	            <div class="card">
+	                <div class="blurring dimmable image">
+	                    <div class="ui dimmer">
+	                        <div class="content">
+	                            <div class="center">
+	                                <a href="/profile/view/${teacher.id}" class="ui inverted button">View profile</a>
+	                            </div>
+	                        </div>
+	                    </div>
+	                    <img src="${teacher.photoUrl}">
+	                </div>
+	                <div class="content">
+	                    <a class="header">${teacher.firstName} ${teacher.lastName}</a>
+	                    <div class="meta">
+	                        <span class="date">${teacher.position}</span><br>
+	                    </div>
+	                </div>
+	                <div class="extra content">
+	                    <a>
+	                        <i class="users icon"></i>
+	                        ${teacher.group.name}
+	                    </a>
+	                </div>
+	            </div>
+	            </#list>
             </#if>
-            <#if nextURL??>
-                <a class="ui right labeled icon button" href="${nextURL}">
-                    Next
-                    <i class="right chevron icon"></i>
-                </a>
-            <#else>
-                <a class="ui right labeled icon button disabled">
-                    Next
-                    <i class="right chevron icon"></i>
-                </a>
-            </#if>
+
         </div>
 
     </div>

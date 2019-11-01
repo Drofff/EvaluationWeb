@@ -15,33 +15,39 @@
 </#if>
 <div class="ui segment">
 
-    <h4 class="header" style="margin-top: 10px; margin-left: 10px;">My Students</h4>
+	<div class="ui two column grid">
+		<div class="column">
+            <h4 class="header" style="margin-top: 10px; margin-left: 10px;">My Students</h4>
+		</div>
+		<div class="column">
+		    <form action="/students/search" class="ui form" method="get">
+			    <div class="field">
+				    <div class="two fields">
+				        <div class="field">
+				            <select name="group_id" multiple="" class="ui fluid dropdown">
+				                <option value="">Groups</option>
+				                <#list groups as group>
+				                    <option <#if group.selected?? && group.selected> selected </#if> value="${group.id}">${group.name}</option>
+				                </#list>
+				            </select>
+				        </div>
+					    <div class="field" style="margin-top: -4px;">
+					        <div class="ui input" style="margin-top: 5px;">
+					            <input type="text" name="name" <#if oldName??> value="${oldName}" </#if> placeholder="Student's name">
+					        </div>
+					    </div>
+				    </div>
+			    </div>
+		        <button class="ui button" type="submit">Search</button>
+		    </form>
+		</div>
+	</div>
 
-    <br/>
-
-    <form action="/students/search" class="ui form" method="get">
-
-        <div style="width: 25%; ">
-            <select name="group_id" multiple="" class="ui fluid dropdown">
-                <option value="">Groups</option>
-                <#list groups as group>
-                    <option <#if group.selected?? && group.selected> selected </#if> value="${group.id}">${group.name}</option>
-                </#list>
-            </select>
-        </div>
-
-        <div class="ui input" style="margin-top: 5px;">
-            <input type="text" name="name" <#if oldName??> value="${oldName}" </#if> placeholder="Student's name">
-        </div>
-
-        <button class="ui button" type="submit">Search</button>
-
-    </form>
     <div class="ui divider"></div>
-    <div class="ui cards" style="margin-top: 1%; height: 55%">
+    <div class="ui cards" style="margin-top: 1%; margin-left: 2%; margin-right: 2%; margin-bottom: 5%;">
         <#list students as student>
             <#if student.photoUrl??>
-                <div class="ui card" style="width: 15%">
+                <div class="ui card">
                     <a class="image" href="#">
                         <img src="${student.photoUrl}" style="height: 300px">
                     </a>
@@ -50,12 +56,12 @@
                         <div class="meta">
                             <span>${student.group.name}</span>
                         </div>
-                        <div class="extra content">
-                            <button class="ui primary button">
-                                Send Email
-                            </button>
-                        </div>
                     </div>
+	                <div class="extra content">
+		                <a class="ui primary button" href="/mail/send?receiverId=${student.userId.id}">
+			                Send Email
+		                </a>
+	                </div>
                 </div>
             <#else>
                 <div class="ui card" style="width: 15%">
@@ -68,9 +74,9 @@
                             <span>${student.group.name}</span>
                         </div>
                         <div class="extra content">
-                            <button class="ui primary button">
+                            <a class="ui primary button" href="/mail/send?receiverId=${student.userId.id}">
                                 Send Email
-                            </button>
+                            </a>
                         </div>
                     </div>
                 </div>

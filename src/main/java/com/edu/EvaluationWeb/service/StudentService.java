@@ -41,6 +41,12 @@ public class StudentService {
         return profileRepository.findByTeacher(currentUser.getProfile(), PageRequest.of(page, PAGE_SIZE));
     }
 
+    public List<Profile> getMyStudents() {
+    	User currentUser = userContext.getCurrentUser();
+    	validateIsTeacher(currentUser);
+    	return profileRepository.findByTeacher(currentUser.getProfile());
+    }
+
     private void validateIsTeacher(User user) {
         if(!user.isTeacher()) {
             throw new BaseException("Provided user is not teacher");

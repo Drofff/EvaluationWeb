@@ -24,6 +24,7 @@ public class ParseUtils {
 
     private static final String QUESTION_NAME_PATTERN = "^q(\\d+)$";
     private static final String ANSWER_NAME_PATTERN = "^a(\\d+)q(\\d+)$";
+    private static final String QUESTION_INDEX_PREFIX = "q";
     private static final String RIGHT_ANSWER_NAME_PATTERN = "^a(\\d+)q(\\d+)r$";
     private static final String LOCAL_DATE_TIME_FORMAT_PATTERN = "uuuu-MM-dd'T'HH:mm";
 
@@ -136,14 +137,10 @@ public class ParseUtils {
     }
 
     private static Map<String, String> filterAnswersByQuestionIndex(Integer questionIndex, Map<String, String> answers) {
-    	String answerWithQuestionIndexPattern = getAnswerNamePatternWithQuestionIndex(questionIndex);
+    	String questionIndexSuffix = QUESTION_INDEX_PREFIX + questionIndex;
     	return answers.entrySet().stream()
-			    .filter(param -> matches(param.getKey(), answerWithQuestionIndexPattern))
+			    .filter(answer -> answer.getKey().endsWith(questionIndexSuffix))
 			    .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-    }
-
-    private static String getAnswerNamePatternWithQuestionIndex(Integer questionIndex) {
-    	return ANSWER_NAME_PATTERN.replaceFirst("(\\d+)", questionIndex.toString());
     }
 
     private static Integer extractQuestionIndexFromName(String name) {

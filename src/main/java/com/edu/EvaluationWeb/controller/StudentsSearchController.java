@@ -70,7 +70,7 @@ public class StudentsSearchController {
             groupOptionDtos.forEach(groupOptionDto -> markIfSelected(groupOptionDto, finalGroupIds));
             model.addAttribute("students", studentsWithPhotos);
             model.addAttribute("groups", groupOptionDtos);
-            model.addAttribute("oldName", name);
+            model.addAttribute("oldName", name.orElse(""));
         } catch(BaseException e) {
             model.addAttribute("errorMessage", e.getMessage());
         }

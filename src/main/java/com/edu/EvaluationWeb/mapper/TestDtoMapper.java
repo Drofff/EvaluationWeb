@@ -15,4 +15,8 @@ public class TestDtoMapper extends Mapper {
         return super.getModelMapper().map(testDto, Test.class);
     }
 
+    public TestDto toDto(Test test) {
+    	return super.getModelMapper().map(test, TestDto.class);
+    }
+
 }

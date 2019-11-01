@@ -321,4 +321,9 @@ public class TestService {
         testRepository.save(testToActivate);
     }
 
+    public List<Test> getMyOwnTests(Integer page) {
+    	User currentUser = userContext.getCurrentUser();
+    	return testRepository.findByTeacher(currentUser.getProfile());
+    }
+
 }

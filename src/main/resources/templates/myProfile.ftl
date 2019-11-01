@@ -26,12 +26,15 @@
         <h4 style="margin-left: 35%;"><i class="users icon"></i> Group: ${profile.groupName}</h4>
         <h4 style="margin-left: 35%;"><i class="users icon"></i>Email: ${profile.email}</h4>
         <h4 style="margin-left: 35%;">
+	        <a class="ui button" href="/profile/edit">
+		        Edit
+	        </a>
             <a class="ui primary button" href="/password/change">
                 Change Password
             </a>
-            <a class="ui button" href="/profile/edit">
-                Edit
-            </a>
+	        <a class="ui primary button" href="/profile/teachers">
+		        My Teachers
+	        </a>
         </h4>
     </#if>
 </div>

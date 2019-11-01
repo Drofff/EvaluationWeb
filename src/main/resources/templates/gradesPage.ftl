@@ -24,7 +24,6 @@
         </div>
         <a class="item" href="/test">My Tests</a>
         <a class="item">Grades</a>
-        <a class="item" href="#">Teachers</a>
     </div>
     <div style="margin-left : 20%;">
 

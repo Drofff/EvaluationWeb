@@ -102,7 +102,15 @@
     </div>
 </div>
 </#if>
-<div class="ui segment">
+<div class="ui tabular menu">
+	<a class="active item">
+		Create Test
+	</a>
+	<a class="item" href="/test/manage">
+		Edit/Delete Tests
+	</a>
+</div>
+<div style="margin-top: 5%;">
 
     <form class="ui form" action="/test/create" method="post" style="width: 60%; margin-left: 10%; margin-right:10%;">
         <h4 class="ui dividing header">Test Information</h4>

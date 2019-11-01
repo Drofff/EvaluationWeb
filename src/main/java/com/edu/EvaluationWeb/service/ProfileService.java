@@ -13,8 +13,11 @@ import com.edu.EvaluationWeb.repository.GroupRepository;
 import com.edu.EvaluationWeb.repository.ProfileRepository;
 import com.edu.EvaluationWeb.repository.SubjectRepository;
 import com.edu.EvaluationWeb.utils.ValidationUtils;
+
+import org.hibernate.Hibernate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.*;
@@ -133,6 +136,12 @@ public class ProfileService {
         if(Objects.isNull(name) || name.isEmpty() || !name.matches(ProfileConstants.NAME_REGEX)) {
             throw new BaseException("Sorry but we accept only non-empty names without special symbols, spaces and digits");
         }
+    }
+
+    public List<Profile> getMyTeachers() {
+    	User currentUser = userContext.getCurrentUser();
+    	Profile profile = currentUser.getProfile();
+    	return profileRepository.findAllTeachersByGroupId(profile.getGroup().getId());
     }
 
 }

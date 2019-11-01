@@ -1,5 +1,6 @@
 package com.edu.EvaluationWeb.repository;
 
+import com.edu.EvaluationWeb.entity.Profile;
 import com.edu.EvaluationWeb.entity.Test;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -12,4 +13,6 @@ import java.util.List;
 public interface TestRepository extends JpaRepository<Test, Long> {
     @Query("from Test t where t.active = false and :dateTime >= t.startTime and :dateTime < t.deadLine")
     List<Test> findNotActiveBetweenStartTimeAndDeadLine(LocalDateTime dateTime);
+
+    List<Test> findByTeacher(Profile teacher);
 }

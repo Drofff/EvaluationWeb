@@ -24,7 +24,6 @@
         </div>
         <a class="item">My Tests</a>
         <a class="item" href="/test/grades">Grades</a>
-        <a class="item" href="#">Teachers</a>
     </div>
     <div style="margin-left : 20%;">
         <#if tests?? && tests?size gt 0>

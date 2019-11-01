@@ -22,6 +22,9 @@ public interface ProfileRepository extends JpaRepository<Profile, Long> {
     @Query("select p from Profile p join p.group g join g.teachers t where :teacher in t")
     Page<Profile> findByTeacher(Profile teacher, Pageable pageable);
 
+	@Query("select p from Profile p join p.group g join g.teachers t where :teacher in t")
+	List<Profile> findByTeacher(Profile teacher);
+
     @Query("select p from Profile p join p.group g join g.teachers t where g in :groups and CONCAT(p.firstName,' ', p.lastName) like CONCAT(:name, '%') and :teacher in t")
     Page<Profile> findByNameAndInGroupsAndTeacher(String name, Set<Group> groups, Profile teacher, Pageable pageable);
 
@@ -42,5 +45,8 @@ public interface ProfileRepository extends JpaRepository<Profile, Long> {
 
     @Query("select p from Profile p join p.userId u join u.roles r where 'TEACHER' in r")
     List<Profile> findAllTeachers();
+
+    @Query("select t from Group as g join g.teachers as t where g.id = :groupId")
+    List<Profile> findAllTeachersByGroupId(Long groupId);
 
 }

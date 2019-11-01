@@ -11,10 +11,16 @@
     <a class="item" href="/profile">
         Profile
     </a>
+	<a class="item" href="/mail/my">
+		MailBox
+	</a>
     <#if isTeacher?? && isTeacher>
         <a class="item" href="/teacher/manager">
             Lessons Manager
         </a>
+	    <a class="item" href="/subjects">
+		    Subjects Manager
+	    </a>
         <a class="item" href="/test/create">
             Tests Manager
         </a>

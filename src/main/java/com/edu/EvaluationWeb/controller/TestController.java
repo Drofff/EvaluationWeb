@@ -48,6 +48,7 @@ import com.edu.EvaluationWeb.repository.GroupRepository;
 import com.edu.EvaluationWeb.repository.ProfileRepository;
 import com.edu.EvaluationWeb.repository.TestRepository;
 import com.edu.EvaluationWeb.repository.TestResultRepository;
+import com.edu.EvaluationWeb.service.FilesService;
 import com.edu.EvaluationWeb.service.TestService;
 import com.edu.EvaluationWeb.service.ValidationService;
 import com.edu.EvaluationWeb.utils.ParseUtils;
@@ -67,13 +68,15 @@ public class TestController {
     private final TestDtoMapper testDtoMapper;
     private final UserContext userContext;
     private final GroupRepository groupRepository;
+    private final FilesService filesService;
 
     @Autowired
     public TestController(ProfileRepository profileRepository, TestService testService,
                           TestRepository testRepository, TestResultRepository testResultRepository,
                           AnswerRepository answerRepository, ValidationService validationService,
                           TestResultMapper testResultMapper, ParseUtils parseUtils,
-                          TestDtoMapper testDtoMapper, UserContext userContext, GroupRepository groupRepository) {
+                          TestDtoMapper testDtoMapper, UserContext userContext, GroupRepository groupRepository,
+                          FilesService filesService) {
         this.profileRepository = profileRepository;
         this.testService = testService;
 
@@ -86,6 +89,7 @@ public class TestController {
         this.testDtoMapper = testDtoMapper;
         this.userContext = userContext;
         this.groupRepository = groupRepository;
+	    this.filesService = filesService;
     }
 
     @GetMapping
@@ -150,27 +154,29 @@ public class TestController {
             }
 
             Test test = testOptional.get();
-
+			fetchTestTeacherPhoto(test);
             TestResult currentTest = testResultRepository.findByTestAndStudent(test, profileRepository.findByUserId(user));
 
             if (currentTest != null && currentTest.getDateTime() == null) {
-
                 return "redirect:/test/currentTest";
-
             } else if (testService.isUserOnTest(profile)) {
                 model.addAttribute("otherTest", true);
             }
-
             model.addAttribute("test", test);
             model.addAttribute("teacher", test.getTeacher());
             model.addAttribute("deadline", test.getDeadLine().format(DateTimeFormatter.ofPattern("uuuu/MM/dd' 'HH:mm")));
-
         } catch (Exception e) {
             e.printStackTrace();
             return "errorPage";
         }
 
         return "startTestPage";
+    }
+
+    private void fetchTestTeacherPhoto(Test test) {
+    	Profile teacher = test.getTeacher();
+    	String photo = filesService.loadPhoto(teacher.getPhotoUrl());
+    	teacher.setPhotoUrl(photo);
     }
 
     @PostMapping
@@ -604,6 +610,15 @@ public class TestController {
             model.addAttribute("error_message", e.getMessage());
         }
         return "redirect:" + Optional.ofNullable(referer).orElse("/test");
+    }
+
+    @GetMapping("/manage")
+	public String manageMyTests(Optional<Integer> page, Model model) {
+    	List<Test> tests = testService.getMyOwnTests(page.orElse(0));
+    	model.addAttribute("tests", tests.stream()
+			    .map(testDtoMapper::toDto)
+			    .collect(Collectors.toList()));
+    	return "manageTests";
     }
 
 }

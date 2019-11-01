@@ -12,6 +12,7 @@ import com.edu.EvaluationWeb.entity.Subject;
 import com.edu.EvaluationWeb.exception.BaseException;
 import com.edu.EvaluationWeb.mapper.ProfileMapper;
 import com.edu.EvaluationWeb.mapper.StorageNodeDtoMapper;
+import com.edu.EvaluationWeb.service.FilesService;
 import com.edu.EvaluationWeb.service.ProfileService;
 import com.edu.EvaluationWeb.service.StorageService;
 import com.edu.EvaluationWeb.utils.PathUtils;
@@ -22,7 +23,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletRequest;
-import java.util.Comparator;
+
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -37,18 +38,20 @@ public class ProfileController {
     private final StorageService storageService;
     private final UserContext userContext;
     private final StorageNodeDtoMapper storageNodeDtoMapper;
+    private final FilesService filesService;
 
     private static final String VIEW_PROFILE_MAPPING_PATTERN = "/profile/view/(\\d+)/";
 
     @Autowired
     public ProfileController(ProfileMapper profileMapper, ProfileService profileService,
                              StorageService storageService, UserContext userContext,
-                             StorageNodeDtoMapper storageNodeDtoMapper) {
+                             StorageNodeDtoMapper storageNodeDtoMapper, FilesService filesService) {
         this.profileMapper = profileMapper;
         this.profileService = profileService;
         this.storageService = storageService;
         this.userContext = userContext;
         this.storageNodeDtoMapper = storageNodeDtoMapper;
+	    this.filesService = filesService;
     }
 
     @GetMapping
@@ -117,7 +120,7 @@ public class ProfileController {
                               Model model, HttpServletRequest request) {
         Profile userToViewProfile = profileService.getProfileById(id);
         ProfileDto profileDto = profileMapper.toDto(userToViewProfile);
-        model.addAttribute("isTeacher", userContext.getCurrentUser().isTeacher());
+        model.addAttribute("user_id", userToViewProfile.getUserId().getId());
         if(userToViewProfile.getUserId().isTeacher()) {
             TeacherProfileDto teacherProfileDto = new TeacherProfileDto(profileDto);
             teacherProfileDto.setStudentsGroups(profileService.getGroupsByTeacher(userToViewProfile).stream()
@@ -147,6 +150,25 @@ public class ProfileController {
             model.addAttribute("profileData", profileDto);
         }
         return "viewProfilePage";
+    }
+
+    @GetMapping("/teachers")
+	public String getMyTeachers(Model model) {
+    	List<Profile> myTeachers = profileService.getMyTeachers();
+    	if(!myTeachers.isEmpty()) {
+		    fetchProfileListPhotos(myTeachers);
+		    model.addAttribute("teachers", myTeachers);
+	    }
+		return "listOfTeachers";
+    }
+
+    private void fetchProfileListPhotos(List<Profile> profiles) {
+    	profiles.forEach(this::fetchProfilePhoto);
+    }
+
+    private void fetchProfilePhoto(Profile profile) {
+    	String photo = filesService.loadPhoto(profile.getPhotoUrl());
+    	profile.setPhotoUrl(photo);
     }
 
 }
