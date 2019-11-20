@@ -35,6 +35,9 @@
 	        <a class="ui primary button" href="/profile/teachers">
 		        My Teachers
 	        </a>
+	        <a class="ui primary button" href="/success/my">
+		        My Success
+	        </a>
         </h4>
     </#if>
 </div>
