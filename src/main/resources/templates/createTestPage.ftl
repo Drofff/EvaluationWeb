@@ -110,10 +110,9 @@
 		Edit/Delete Tests
 	</a>
 </div>
-<div style="margin-top: 5%;">
+<div style="margin-top: 2%;">
 
     <form class="ui form" action="/test/create" method="post" style="width: 60%; margin-left: 10%; margin-right:10%;">
-        <h4 class="ui dividing header">Test Information</h4>
         <div class="field" style="width: 510px;">
             <label>Name</label>
                 <div class="field <#if nameError??>error</#if>">
@@ -200,7 +199,7 @@
         </div>
 
 
-        <button class="ui primary button" type="submit">
+        <button class="ui primary button" style="margin-top:5%;" type="submit">
             Create
         </button>
 

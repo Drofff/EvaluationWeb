@@ -47,7 +47,7 @@ public class MySuccessService {
 		validateIsTeacherOfSubject(teacher, subject);
 		validateMark(mark);
 		validateDescription(description);
-		Mark markObject = buildMark(mark, student, subject);
+		Mark markObject = buildMark(mark, student, subject, description);
 		markRepository.save(markObject);
 	}
 
@@ -77,12 +77,13 @@ public class MySuccessService {
 		}
 	}
 
-	private Mark buildMark(Long mark, Profile student, Subject subject) {
+	private Mark buildMark(Long mark, Profile student, Subject subject, String description) {
 		Mark markObject = new Mark();
 		markObject.setMark(mark);
 		markObject.setStudent(student);
 		markObject.setSubject(subject);
 		markObject.setLocalDateTime(LocalDateTime.now());
+		markObject.setDescription(description);
 		return markObject;
 	}
 

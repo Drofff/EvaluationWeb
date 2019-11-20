@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import com.edu.EvaluationWeb.constants.ModelConstants;
+import com.edu.EvaluationWeb.dto.MarkDto;
 import com.edu.EvaluationWeb.entity.Mark;
 import com.edu.EvaluationWeb.entity.Profile;
 import com.edu.EvaluationWeb.entity.Subject;
@@ -49,9 +50,7 @@ public class MySuccessController {
 		try {
 			if(subjectId != null) {
 				List<Mark> myMarks = mySuccessService.getMyStatsOfSubject(subjectId);
-				model.addAttribute("marks", myMarks.stream()
-						.map(markDtoMapper::toDto)
-						.collect(Collectors.toList()));
+				model.addAttribute("marks", toMarkDtoList(myMarks));
 				model.addAttribute("selected_subject_id", subjectId);
 			}
 			return "marksPage";
@@ -62,7 +61,13 @@ public class MySuccessController {
 
 	@GetMapping("/manage-students")
 	@PreAuthorize("hasAuthority('TEACHER')")
-	public String manageStudents(Model model) {
+	public String manageStudents(@RequestParam(required = false) Long studentId, @RequestParam(required = false) Long subjectId, Model model) {
+		if(studentId != null && subjectId != null) {
+			List<Mark> marks = mySuccessService.getSubjectStatsOfStudent(subjectId, studentId);
+			model.addAttribute("marks", toMarkDtoList(marks));
+			model.addAttribute("selected_subject_id", subjectId);
+			model.addAttribute("selected_student_id", studentId);
+		}
 		List<Profile> students = studentService.getMyStudents();
 		model.addAttribute("students", students);
 		List<Subject> subjects = subjectsService.getMySubjects();
@@ -70,27 +75,21 @@ public class MySuccessController {
 		return "evaluationPage";
 	}
 
-	@GetMapping("/student/{id}")
-	@PreAuthorize("hasAuthority('TEACHER')")
-	public String getStudentSuccessStats(@PathVariable Long id, Long subjectId, Model model) {
-		try {
-			List<Mark> marks = mySuccessService.getSubjectStatsOfStudent(subjectId, id);
-			model.addAttribute("marks", marks);
-			return "studentsMarksPage";
-		} catch(BaseException e) {
-			return handleError(e, model);
-		}
+	private List<MarkDto> toMarkDtoList(List<Mark> marks) {
+		return marks.stream()
+				.map(markDtoMapper::toDto)
+				.collect(Collectors.toList());
 	}
 
-	@PostMapping("/evaluate/{studentId}")
+	@PostMapping("/evaluate")
 	@PreAuthorize("hasAuthority('TEACHER')")
-	public String evaluateStudent(@PathVariable Long studentId, Long subjectId, Long mark, String description, Model model) {
+	public String evaluateStudent(Long studentId, Long subjectId, Long mark, String description, Model model) {
 		try {
 			mySuccessService.saveSuccess(mark, description, studentId, subjectId);
 		} catch(BaseException e) {
 			return handleError(e, model);
 		}
-		return "redirect:/evaluate";
+		return "redirect:/success/manage-students?studentId=" + studentId + "&subjectId=" + subjectId;
 	}
 
 	private String handleError(BaseException e, Model model) {

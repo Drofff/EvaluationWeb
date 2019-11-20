@@ -218,7 +218,7 @@ public class CalendarService {
         Integer inTimeOfLessonCount = lessonsRepository.countByDate(scheduledTime, finishTime, group, teacherProfile);
         Lesson leftNeighbour = lessonsRepository.findFirstLeftNeighbour(scheduledTime, group.getId(), teacherProfile.getId());
 
-        return inTimeOfLessonCount > 0 || leftNeighbour.getDateTime().isAfter(scheduledTime) ? BUSY_MESSAGE : FREE_STATUS;
+        return inTimeOfLessonCount > 0 || leftNeighbour != null && leftNeighbour.getDateTime().isAfter(scheduledTime) ? BUSY_MESSAGE : FREE_STATUS;
     }
 
 

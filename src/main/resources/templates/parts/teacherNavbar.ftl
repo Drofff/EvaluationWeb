@@ -17,6 +17,9 @@
     <a class="item" href="/teacher/manager">
         Lessons Manager
     </a>
+	<a class="item" href="/success/manage-students">
+		SS Manager
+	</a>
 	<a class="item" href="/subjects">
 		Subjects Manager
 	</a>
