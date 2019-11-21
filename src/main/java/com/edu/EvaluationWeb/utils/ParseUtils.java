@@ -4,18 +4,28 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import com.edu.EvaluationWeb.dto.AnswerDto;
+import com.edu.EvaluationWeb.dto.QuestionDto;
 import com.edu.EvaluationWeb.entity.Answer;
+import com.edu.EvaluationWeb.entity.Group;
 import com.edu.EvaluationWeb.entity.Question;
+import com.edu.EvaluationWeb.entity.Test;
 import com.edu.EvaluationWeb.exception.BaseException;
 import com.edu.EvaluationWeb.repository.AnswerRepository;
 
@@ -27,6 +37,7 @@ public class ParseUtils {
     private static final String QUESTION_INDEX_PREFIX = "q";
     private static final String RIGHT_ANSWER_NAME_PATTERN = "^a(\\d+)q(\\d+)r$";
     private static final String LOCAL_DATE_TIME_FORMAT_PATTERN = "uuuu-MM-dd'T'HH:mm";
+	private static final String RIGHT_ANSWERS_SEPARATOR = ",";
 
     private final AnswerRepository answerRepository;
 
@@ -43,6 +54,81 @@ public class ParseUtils {
         }
     }
 
+	private static List<String> parseRightAnswers(Map<String, String[]> parameters) {
+		return parameters.keySet().stream()
+				.filter(param -> matches(param, RIGHT_ANSWER_NAME_PATTERN))
+				.collect(Collectors.toList());
+	}
+
+	private static Question parseQuestionFromParametersMapEntry(Map.Entry<String, String[]> entry) {
+		String [] value = entry.getValue();
+		if(Objects.nonNull(value) && value.length == 1) {
+			return wrapQuestion(value[0], entry.getKey());
+		}
+		return null;
+	}
+
+	private static Map<String, Answer> parseAnswersWithQuestionIndex(Integer questionIndex, Map<String, String[]> parameters) {
+		Map<String, String> answers = getAnswersFromParameters(parameters);
+		Map<String, String> answersWithQuestionIndex = filterAnswersByQuestionIndex(questionIndex, answers);
+		return wrapAnswers(answersWithQuestionIndex);
+	}
+
+	private static Map<String, String> getAnswersFromParameters(Map<String, String[]> parameters) {
+		return parameters.entrySet().stream()
+				.filter(param -> matches(param.getKey(), ANSWER_NAME_PATTERN))
+				.collect(Collectors.toMap(Map.Entry::getKey, param -> getAnswerValue(param.getValue())));
+	}
+
+	private static String getAnswerValue(String [] value) {
+		if(Objects.nonNull(value) && value.length > 0) {
+			return value[0];
+		}
+		throw new BaseException("Invalid answer provided");
+	}
+
+	private static Map<String, String> filterAnswersByQuestionIndex(Integer questionIndex, Map<String, String> answers) {
+		String questionIndexSuffix = QUESTION_INDEX_PREFIX + questionIndex;
+		return answers.entrySet().stream()
+				.filter(answer -> answer.getKey().endsWith(questionIndexSuffix))
+				.collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+	}
+
+	private static Integer extractQuestionIndexFromName(String name) {
+		Matcher matcher = Pattern.compile(QUESTION_NAME_PATTERN).matcher(name);
+		if(matcher.find()) {
+			return Integer.parseInt(matcher.group(1));
+		}
+		return null;
+	}
+
+	private static Map<String, Answer> wrapAnswers(Map<String, String> answers) {
+		return answers.entrySet().stream()
+				.collect(Collectors.toMap(Map.Entry::getKey, param -> wrapAnswer(param.getValue())));
+	}
+
+	private static Answer wrapAnswer(String answerText) {
+		Answer answer = new Answer();
+		answer.setText(answerText);
+		return answer;
+	}
+
+	private static Question wrapQuestion(String questionText) {
+		Question question = new Question();
+		question.setQuestion(questionText);
+		return question;
+	}
+
+	private static Question wrapQuestion(String questionText, String parameterName) {
+		Question question = wrapQuestion(questionText);
+		question.setParameterName(parameterName);
+		return question;
+	}
+
+	public static boolean matches(String name, String pattern) {
+		return Pattern.compile(pattern).matcher(name).find();
+	}
+
     public static LocalDateTime parseStartTimeFromString(String startTime) {
         try {
             return parseLocalDateTimeFromString(startTime);
@@ -56,18 +142,33 @@ public class ParseUtils {
         return LocalDateTime.parse(dateTime, dateTimeFormatter);
     }
 
-    public List<Question> parseQuestionsWithAnswersFromParametersMap(Map<String, String[]> parameters) {
-        List<Question> questions = parseQuestions(parameters);
-        questions.forEach(question -> setAnswersIntoQuestionFromParametersMap(question, parameters));
-        return questions;
-    }
-
 	private static List<Question> parseQuestions(Map<String, String[]> parameters) {
 		return parameters.entrySet().stream()
 				.filter(param -> matches(param.getKey(), QUESTION_NAME_PATTERN))
 				.map(ParseUtils::parseQuestionFromParametersMapEntry)
 				.filter(Objects::nonNull)
 				.collect(Collectors.toList());
+	}
+
+	private static String buildRightAnswerString(List<String> rightAnswers, Map<String, Answer> answers) {
+		List<String> rightAnswersNames = getAnswersNamesFromRightAnswers(rightAnswers);
+		return answers.entrySet().stream()
+				.filter(answer -> rightAnswersNames.contains(answer.getKey()))
+				.map(answer -> answer.getValue().getId().toString())
+				.collect(Collectors.joining(RIGHT_ANSWERS_SEPARATOR));
+	}
+
+	private static List<String> getAnswersNamesFromRightAnswers(List<String> rightAnswers) {
+		return rightAnswers.stream()
+				.map(rightAnswer -> rightAnswer.replace("r", ""))
+				.collect(Collectors.toList());
+	}
+
+
+	public List<Question> parseQuestionsWithAnswersFromParametersMap(Map<String, String[]> parameters) {
+		List<Question> questions = parseQuestions(parameters);
+		questions.forEach(question -> setAnswersIntoQuestionFromParametersMap(question, parameters));
+		return questions;
 	}
 
     private void setAnswersIntoQuestionFromParametersMap(Question question, Map<String, String[]> parameters) {
@@ -80,20 +181,6 @@ public class ParseUtils {
         question.setRightAnswer(rightAnswer);
     }
 
-    private static String buildRightAnswerString(List<String> rightAnswers, Map<String, Answer> answers) {
-    	List<String> rightAnswersNames = getAnswersNamesFromRightAnswers(rightAnswers);
-    	return answers.entrySet().stream()
-			    .filter(answer -> rightAnswersNames.contains(answer.getKey()))
-			    .map(answer -> answer.getValue().getId().toString())
-			    .collect(Collectors.joining(","));
-    }
-
-    private static List<String> getAnswersNamesFromRightAnswers(List<String> rightAnswers) {
-    	return rightAnswers.stream()
-			    .map(rightAnswer -> rightAnswer.replace("r", ""))
-			    .collect(Collectors.toList());
-    }
-
     private Map<String, Answer> saveAnswers(Map<String, Answer> answers) {
     	return answers.entrySet().stream()
 			    .collect(Collectors.toMap(Map.Entry::getKey, answer -> saveAnswer(answer.getValue())));
@@ -103,79 +190,11 @@ public class ParseUtils {
     	return answerRepository.save(answer);
     }
 
-    private static List<String> parseRightAnswers(Map<String, String[]> parameters) {
-    	return parameters.keySet().stream()
-			    .filter(param -> matches(param, RIGHT_ANSWER_NAME_PATTERN))
+    public static List<Long> parseAnswersString(String answersStr) {
+    	String [] answers = answersStr.split(RIGHT_ANSWERS_SEPARATOR);
+    	return Arrays.stream(answers)
+			    .map(Long::parseLong)
 			    .collect(Collectors.toList());
-    }
-
-    private static Question parseQuestionFromParametersMapEntry(Map.Entry<String, String[]> entry) {
-        String [] value = entry.getValue();
-        if(Objects.nonNull(value) && value.length == 1) {
-            return wrapQuestion(value[0], entry.getKey());
-        }
-        return null;
-    }
-
-    private static Map<String, Answer> parseAnswersWithQuestionIndex(Integer questionIndex, Map<String, String[]> parameters) {
-        Map<String, String> answers = getAnswersFromParameters(parameters);
-        Map<String, String> answersWithQuestionIndex = filterAnswersByQuestionIndex(questionIndex, answers);
-        return wrapAnswers(answersWithQuestionIndex);
-    }
-
-    private static Map<String, String> getAnswersFromParameters(Map<String, String[]> parameters) {
-    	return parameters.entrySet().stream()
-			    .filter(param -> matches(param.getKey(), ANSWER_NAME_PATTERN))
-			    .collect(Collectors.toMap(Map.Entry::getKey, param -> getAnswerValue(param.getValue())));
-    }
-
-    private static String getAnswerValue(String [] value) {
-    	if(Objects.nonNull(value) && value.length > 0) {
-    		return value[0];
-	    }
-    	throw new BaseException("Invalid answer provided");
-    }
-
-    private static Map<String, String> filterAnswersByQuestionIndex(Integer questionIndex, Map<String, String> answers) {
-    	String questionIndexSuffix = QUESTION_INDEX_PREFIX + questionIndex;
-    	return answers.entrySet().stream()
-			    .filter(answer -> answer.getKey().endsWith(questionIndexSuffix))
-			    .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-    }
-
-    private static Integer extractQuestionIndexFromName(String name) {
-        Matcher matcher = Pattern.compile(QUESTION_NAME_PATTERN).matcher(name);
-        if(matcher.find()) {
-            return Integer.parseInt(matcher.group(1));
-        }
-        return null;
-    }
-
-    private static Map<String, Answer> wrapAnswers(Map<String, String> answers) {
-        return answers.entrySet().stream()
-                .collect(Collectors.toMap(Map.Entry::getKey, param -> wrapAnswer(param.getValue())));
-    }
-
-    private static Answer wrapAnswer(String answerText) {
-        Answer answer = new Answer();
-        answer.setText(answerText);
-        return answer;
-    }
-
-    private static Question wrapQuestion(String questionText) {
-        Question question = new Question();
-        question.setQuestion(questionText);
-        return question;
-    }
-
-    private static Question wrapQuestion(String questionText, String parameterName) {
-        Question question = wrapQuestion(questionText);
-        question.setParameterName(parameterName);
-        return question;
-    }
-
-    public static boolean matches(String name, String pattern) {
-        return Pattern.compile(pattern).matcher(name).find();
     }
 
 }

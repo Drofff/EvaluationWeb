@@ -16,7 +16,6 @@ import java.util.stream.Collectors;
 
 import javax.servlet.http.HttpServletRequest;
 
-import com.edu.EvaluationWeb.dto.AnswerDto;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -31,6 +30,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.edu.EvaluationWeb.component.UserContext;
+import com.edu.EvaluationWeb.constants.ModelConstants;
+import com.edu.EvaluationWeb.dto.AnswerDto;
+import com.edu.EvaluationWeb.dto.QuestionDto;
 import com.edu.EvaluationWeb.dto.TestDto;
 import com.edu.EvaluationWeb.dto.TestResultDto;
 import com.edu.EvaluationWeb.entity.Group;
@@ -52,6 +54,8 @@ import com.edu.EvaluationWeb.service.FilesService;
 import com.edu.EvaluationWeb.service.TestService;
 import com.edu.EvaluationWeb.service.ValidationService;
 import com.edu.EvaluationWeb.utils.ParseUtils;
+import com.edu.EvaluationWeb.utils.PathUtils;
+import com.edu.EvaluationWeb.utils.TestUtils;
 
 @Controller
 @RequestMapping("/test")
@@ -404,9 +408,9 @@ public class TestController {
 
                     String answer = s.split(":")[1];
 
-                    List<Long> answersId = validationService.parseAnswers(answer);
+                    List<Long> answersId = ParseUtils.parseAnswersString(answer);
 
-                    List<Long> rightAnswers = validationService.parseAnswers(questions.get(questionPosition - 1).getRightAnswer());
+                    List<Long> rightAnswers = ParseUtils.parseAnswersString(questions.get(questionPosition - 1).getRightAnswer());
 
                     if (answersId.size() == rightAnswers.size()) {
 
@@ -469,7 +473,7 @@ public class TestController {
                 .collect(Collectors.toList());
 
         model.addAttribute("results", testResults);
-        model.addAttribute("total", testResults.stream().mapToLong(x -> x.getGrade()).sum());
+        model.addAttribute("total", testResults.stream().mapToLong(TestResultDto::getGrade).sum());
         return "gradesPage";
 
     }
@@ -495,111 +499,80 @@ public class TestController {
     @PostMapping("/create")
     @PreAuthorize("hasAuthority('TEACHER')")
     public String createTest(TestDto testDto, Model model, HttpServletRequest request) {
-        Map<String, String[]> map = request.getParameterMap();
-        Map<String, String> oldParams = request.getParameterMap().entrySet().stream()
-                .collect(Collectors.toMap(Map.Entry::getKey, param -> param.getValue()[0]));
-        model.addAttribute("oldParams", oldParams);
-        model.addAttribute("firstQuestionAdditionalAnswers", getAdditionalAnswersForFirstQuestionFromParams(oldParams));
-        setMyGroups(model);
-        Test newTest = null;
-        try {
-            newTest = toTestEntityWithQuestionsFromParams(testDto, map);
-            Set<Group> newTestGroups = testService.parseGroupsByNames(testDto.getGroups());
-            newTest.setGroups(newTestGroups);
-        } catch(BaseException e) {
-            model.addAttribute("messageError", e.getMessage());
-            return "createTestPage";
-        }
-        model.addAttribute("enteredValue", newTest);
-        model.addAttribute("selectedGroupsNames", newTest.getGroups().stream()
-                                .map(Group::getName)
-                                .collect(Collectors.toList()));
-        try {
-            testService.save(newTest);
+	    Map<String, String[]> params = request.getParameterMap();
+	    model.addAttribute("oldParams", TestUtils.toSingleValueParamsMap(params));
+	    List<AnswerDto> additionalAnswers = TestUtils.getAdditionalAnswersForFirstQuestionFromParams(params);
+	    model.addAttribute("firstQuestionAdditionalAnswers", additionalAnswers);
+	    setMyGroups(model);
+	    try {
+	        Test test = buildTest(testDto, params);
+	        model.addAttribute("enteredValue", test);
+	        model.addAttribute("selectedGroupsNames", testDto.getGroups());
+            testService.save(test);
             model.addAttribute("messageSuccess", "Test was successfully saved");
         } catch(ValidationException e) {
         	e.printFieldErrors();
             model.addAttribute("messageError", e.getMessage());
             model.mergeAttributes(e.getFieldErrors());
+        } catch(BaseException e) {
+	        model.addAttribute("messageError", e.getMessage());
         }
         return "createTestPage";
     }
 
-    private List<AnswerDto> getAdditionalAnswersForFirstQuestionFromParams(Map<String, String> params) {
-        String pattern = "^a([02-9]|\\d{2,})q1$";
-        return params.entrySet().stream()
-                .filter(param -> ParseUtils.matches(param.getKey(), pattern))
-                .map(param -> toAnswerDto(param, params))
-                .collect(Collectors.toList());
-    }
-
-    private AnswerDto toAnswerDto(Map.Entry<String, String> param, Map<String, String> params) {
-        AnswerDto answerDto = new AnswerDto();
-        answerDto.setName(param.getKey());
-        answerDto.setAnswer(param.getValue());
-        answerDto.setRight(isRightAnswer(answerDto.getName(), params));
-        return answerDto;
-    }
-
-    private boolean isRightAnswer(String answerName, Map<String, String> params) {
-        String rightAnswerKey = answerName + "r";
-        return params.containsKey(rightAnswerKey);
-    }
-
-    private void setMyGroups(Model model) {
-        Profile profile = userContext.getCurrentUser().getProfile();
-        model.addAttribute("my_groups", groupRepository.findByTeacher(profile));
-    }
-
-    private Test toTestEntityWithQuestionsFromParams(TestDto testDto, Map<String, String[]> params) {
-        Test entity = testDtoMapper.toEntity(testDto);
-        if(Objects.isNull(entity.getActive())) {
-        	entity.setActive(false);
-        }
-        if(Objects.nonNull(testDto.getDeadLine())) {
-            LocalDateTime deadline = ParseUtils.parseDeadlineFromString(testDto.getDeadLine());
-            entity.setDeadLine(deadline);
-        }
-        if(Objects.nonNull(testDto.getStartTime())) {
-            LocalDateTime startTime = ParseUtils.parseStartTimeFromString(testDto.getStartTime());
-            entity.setStartTime(startTime);
-        }
-        List<Question> questions = parseUtils.parseQuestionsWithAnswersFromParametersMap(params);
-        entity.setQuestions(new HashSet<>(questions));
-        return entity;
-    }
-
     @GetMapping("/update/{id}")
     @PreAuthorize("hasAuthority('TEACHER')")
-    public String updateTestPage(@PathVariable Long id, Model model) {
-        model.addAttribute("test", testService.getById(id));
-        return "updateTestPage";
+    public String updateTestPage(@PathVariable Long id, Model model,
+                                 @RequestParam(name = ModelConstants.ERROR_MESSAGE_PARAM, required = false) String errorMessage,
+                                 @RequestParam(name = ModelConstants.INFO_MESSAGE, required = false) String infoMessage) {
+    	Test test = testService.getById(id);
+    	Set<QuestionDto> questions = TestUtils.getQuestionDtoSet(test);
+    	model.addAttribute("questions", questions);
+	    model.addAttribute("lastQuestionIndex", questions.size());
+        model.addAttribute("test", test);
+        model.addAttribute("testId", test.getId());
+        model.addAttribute("selectedGroupsNames", TestUtils.toGroupNamesList(test.getGroups()));
+        setMyGroups(model);
+        if(Objects.nonNull(errorMessage)) {
+        	model.addAttribute(ModelConstants.ERROR_MESSAGE_PARAM, errorMessage);
+        }
+        if(Objects.nonNull(infoMessage)) {
+        	model.addAttribute(ModelConstants.INFO_MESSAGE, infoMessage);
+        }
+        return "editTestPage";
     }
 
     @PostMapping("/update/{id}")
     @PreAuthorize("hasAuthority('TEACHER')")
-    public String updateTest(TestDto testDto, @PathVariable Long id, Model model, HttpServletRequest request) {
-        Test newTest = null;
-        Map<String, String[]> params = request.getParameterMap();
+    public String updateTest(TestDto testDto, @PathVariable Long id, HttpServletRequest request) {
         try {
-            newTest = toTestEntityWithQuestionsFromParams(testDto, params);
-            newTest.setId(id);
-            Set<Group> newTestGroups = testService.parseGroupsByNames(testDto.getGroups());
-            newTest.setGroups(newTestGroups);
-        } catch(BaseException e) {
-            model.addAttribute("messageError", e.getMessage());
-            return "updateTestPage";
+        	Test test = buildTest(id, testDto, request.getParameterMap());
+            testService.update(test);
+            return PathUtils.buildUpdateRedirectWithQueryParams(id, ModelConstants.INFO_MESSAGE, "Test was successfully updated");
+        } catch(ValidationException | BaseException e) {
+            return PathUtils.buildUpdateRedirectWithQueryParams(id, ModelConstants.ERROR_MESSAGE_PARAM, e.getMessage());
         }
-        try {
-            testService.update(newTest);
-            model.addAttribute("messageSuccess", "Test was successfully updated");
-        } catch(ValidationException e) {
-            model.addAttribute("messageError", e.getMessage());
-            model.mergeAttributes(e.getFieldErrors());
-        }
-        model.addAttribute("test", newTest);
-        return "updateTestPage";
     }
+
+    private Test buildTest(Long id, TestDto testDto, Map<String, String[]> params) {
+    	Test test = buildTest(testDto, params);
+	    test.setId(id);
+	    return test;
+    }
+
+    private Test buildTest(TestDto testDto, Map<String, String[]> params) {
+	    Test test = testDtoMapper.toEntity(testDto);
+	    List<Question> questions = parseUtils.parseQuestionsWithAnswersFromParametersMap(params);
+	    test.setQuestions(new HashSet<>(questions));
+	    Set<Group> groups = testService.parseGroupsByNames(testDto.getGroups());
+	    test.setGroups(groups);
+	    return test;
+    }
+
+	private void setMyGroups(Model model) {
+		Profile profile = userContext.getCurrentUser().getProfile();
+		model.addAttribute("my_groups", groupRepository.findByTeacher(profile));
+	}
 
     @GetMapping("/active/{id}/{isActive}")
     public String activateTest(@PathVariable Long id, @PathVariable Boolean isActive,

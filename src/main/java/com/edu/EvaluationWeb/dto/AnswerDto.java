@@ -6,6 +6,14 @@ public class AnswerDto {
     private String answer;
     private boolean isRight;
 
+    public AnswerDto() {}
+
+    public AnswerDto(String name, String answer, boolean isRight) {
+    	this.name = name;
+    	this.answer = answer;
+    	this.isRight = isRight;
+    }
+
     public String getName() {
         return name;
     }

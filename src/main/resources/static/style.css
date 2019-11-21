@@ -309,3 +309,8 @@ li a:hover {
     display: inline-block;
     top: 27px;
 }
+.answer-delete-button{
+    display: inline-block;
+    position: relative;
+    top: 14px;
+}

@@ -148,7 +148,7 @@
     </tbody>
 </table>
 
-<div class="ui buttons" style="margin-left: 35%; margin-bottom: 3%;">
+<div class="ui buttons" style="margin-left: 37%; margin-bottom: 3%;">
     <#if prevURL??>
         <a class="ui labeled icon button" href="${prevURL}">
             <i class="left chevron icon"></i>
@@ -181,7 +181,7 @@
         Create directory
     </div>
     <div class="image content">
-            <form class="description" action="/teacher/storage/create/directory" method="post">
+            <form class="description" action="/teacher/storage/create/directory" method="post" style="margin-left: 30%;">
                 <div class="ui form">
                     <div class="inline fields">
                         <div class="eight wide field">
@@ -193,17 +193,21 @@
                 <#if id??>
                     <input type="hidden" name="parent" value="${id}">
                 </#if>
-                <div class="ui checkbox">
-                    <input type="checkbox" id="make_public" checked>
-                    <label>Make public</label>
-                </div>
-                <h4 class="header" style="margin-top: 5%;">Select groups to grant access to this directory</h4>
-                <select name="access" multiple="" id="selector" class="ui fluid search disabled dropdown">
-                    <option value="">Groups</option>
-                    <#list groups as group>
-                        <option value="${group.id}">${group.name}</option>
-                    </#list>
-                </select>
+	            <div class="field" style="margin-left: 7%;">
+	                <div class="ui checkbox">
+	                    <input type="checkbox" id="make_public" style="margin-left: 5%;">
+	                    <label>Make public</label>
+	                </div>
+	            </div>
+                <h4 class="header" style="margin-top: 5%;">Access granted groups</h4>
+	            <div class="field" style="width: 50%;">
+	                <select name="access" multiple="" id="selector" class="ui fluid search disabled dropdown">
+	                    <option value="">Groups</option>
+	                    <#list groups as group>
+	                        <option value="${group.id}">${group.name}</option>
+	                    </#list>
+	                </select>
+	            </div>
                 <button style="margin-top: 5%;" class="ui positive right labeled icon button" type="submit">
                     Create
                     <i class="checkmark icon"></i>
@@ -221,25 +225,29 @@
     <i class="close icon"></i>
     <#if currentDirectory??>
         <div class="header">
-            Edit permissions for ${currentDirectory}
+            Edit permissions for <a>${currentDirectory}</a>
         </div>
     </#if>
     <div class="image content">
-        <form class="description" action="/teacher/storage/edit/permissions" method="post">
+        <form class="description" action="/teacher/storage/edit/permissions" method="post" style="margin-left: 30%;">
             <#if id??>
             <input type="hidden" name="id" value="${id}">
             </#if>
-        <div class="ui checkbox">
-            <input type="checkbox" id="make_public_permissions" <#if permissionsList??><#else>checked</#if>>
-            <label>Make public</label>
-        </div>
-        <h4 class="header" style="margin-top: 5%;">Select groups to grant access to this directory</h4>
-        <select name="access" multiple="" id="selector_edit" class="ui fluid search dropdown">
-            <option value="">Groups</option>
-            <#list groups as group>
-             <option value="${group.id}" <#if permissionsList?? && permissionsList?seq_contains(group.id)>selected</#if> >${group.name}</option>
-            </#list>
-        </select>
+        <h4 class="header" style="margin-top: 5%;">Access granted groups</h4>
+	        <div class="field" style="width: 50%;">
+		        <select name="access" multiple="" id="selector_edit" class="ui fluid search dropdown">
+		            <option value="">Groups</option>
+		            <#list groups as group>
+		             <option value="${group.id}" <#if permissionsList?? && permissionsList?seq_contains(group.id)>selected</#if> >${group.name}</option>
+		            </#list>
+		        </select>
+	        </div>
+	        <div class="field" style="margin-top: 5%;">
+		        <div class="ui checkbox">
+			        <input type="checkbox" id="make_public_permissions" <#if permissionsList??><#else>checked</#if>>
+			        <label>Make public</label>
+		        </div>
+	        </div>
         <button style="margin-top: 5%;" class="ui positive right labeled icon button" type="submit">
             Save
             <i class="checkmark icon"></i>

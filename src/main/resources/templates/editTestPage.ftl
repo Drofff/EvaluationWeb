@@ -12,6 +12,12 @@
         var questionIndexRegex = /.*q([0-9]+).*/;
         var questionRegex = /^q([0-9]+)$/;
         $(function() {
+
+            <#if lastQuestionIndex??>
+                var new_question_index = ${lastQuestionIndex};
+                set_question_index(new_question_index);
+            </#if>
+
             var params = [];
             <#if oldParams??>
             <#list oldParams as key, value>
@@ -94,22 +100,22 @@
 </head>
 <body>
 <#include "parts/teacherNavbar.ftl">
-<#if messageError??>
+<#if error_message??>
 	<div class="ui warning message" style="margin-left:10%; margin-right:10%;">
 		<div class="header">
-            ${messageError}
+            ${error_message}
 		</div>
 	</div>
 </#if>
-<#if messageSuccess??>
+<#if message??>
 	<div class="ui positive message" style="margin-left:10%; margin-right:10%;">
 		<div class="header">
-            ${messageSuccess}
+            ${message}
 		</div>
 	</div>
 </#if>
 <div class="ui tabular menu">
-	<a class="active item">
+	<a class="item" href="/test/create">
 		Create Test
 	</a>
 	<a class="item" href="/test/manage">
@@ -118,11 +124,11 @@
 </div>
 <div style="margin-top: 2%;">
 
-	<form class="ui form" action="/test/create" method="post" style="width: 60%; margin-left: 10%; margin-right:10%;">
+	<form class="ui form" action="/test/update/${testId}" method="post" style="width: 60%; margin-left: 10%; margin-right:10%;">
 		<div class="field" style="width: 510px;">
 			<label>Name</label>
 			<div class="field <#if nameError??>error</#if>">
-				<input type="text" <#if enteredValue?? && enteredValue.name??>value="${enteredValue.name}"</#if> name="name" placeholder="Test name" pattern="[A-Za-zА-Яа-яЁё-іІїЇєЄ,\D, 0-9]{1,}" required>
+				<input type="text" <#if test?? && test.name??>value="${test.name}"</#if> name="name" placeholder="Test name" pattern="[A-Za-zА-Яа-яЁё-іІїЇєЄ,\D, 0-9]{1,}" required>
                 <#if nameError??><p style="color:red">${nameError}</p></#if>
 			</div>
 		</div>
@@ -139,7 +145,7 @@
 		<div class="field <#if durationError??>error</#if>" style="width: 510px;">
 			<label>Duration</label>
 			<div class="ui right labeled input">
-				<input type="number" <#if enteredValue?? && enteredValue.duration??>value="${enteredValue.duration}"</#if> name="duration" placeholder="Duration" required>
+				<input type="number" <#if test?? && test.duration??>value="${test.duration}"</#if> name="duration" placeholder="Duration" required>
 				<div class="ui basic label">
 					Minutes
 				</div>
@@ -150,7 +156,7 @@
 		<div class="field <#if deadlineError??>error</#if>" style="display: inline-block">
 			<label>Deadline</label>
 			<div class="field">
-				<input type="datetime-local" name="deadLine" <#if enteredValue?? && enteredValue.deadLine??>value="${enteredValue.deadLine}"</#if> required>
+				<input type="datetime-local" name="deadLine" <#if test?? && test.deadLine??>value="${test.deadLine}"</#if> required>
                 <#if deadlineError??><p style="color:red">${deadlineError}</p></#if>
 			</div>
 		</div>
@@ -158,50 +164,46 @@
 		<div class="field <#if startTimeError??>error</#if>" style="display: inline-block">
 			<label>Start time</label>
 			<div class="field">
-				<input type="datetime-local" name="startTime" <#if enteredValue?? && enteredValue.startTime??>value="${enteredValue.startTime}"</#if> required>
+				<input type="datetime-local" name="startTime" <#if test?? && test.startTime??>value="${test.startTime}"</#if> required>
 			</div>
 		</div>
 		<div class="ui divider"></div>
+
+
+		<#list questions as question>
+
 		<div class="field" style=" width: 510px;">
 			<label>Question:</label>
 			<div class="field">
-				<input type="text" name="q1" <#if oldParams?? && oldParams.q1??>value="${oldParams.q1}"</#if> required>
+				<input type="text" name="${question.parameterName}" value="${question.question}" required>
 			</div>
 		</div>
+
 		<div class="field" style="margin-left: 5%;">
 			<label>Answers:</label>
-			<div class="field testAnswer">
-				<input type="text" name="a1q1" <#if oldParams?? && oldParams.a1q1??>value="${oldParams.a1q1}"</#if> required>
-			</div>
-			<div class="ui checkbox testCheckbox">
-				<input type="checkbox" name="a1q1r" <#if oldParams?? && oldParams.a1q1r??>checked</#if> title="Check right answer">
-				<label></label>
-			</div>
-
-            <#if firstQuestionAdditionalAnswers??>
-                <#list firstQuestionAdditionalAnswers as answer>
-					<div class="delete-block-answer">
-						<button type="button" class="ui mini red icon button answer-delete-button" name='${answer.name}' onclick="delete_answer(this)">
-							<i class="delete icon"></i>
-						</button>
-						<div class="field testAnswer">
-							<input type="text" name="${answer.name}" value="${answer.answer}" required>
-						</div>
-						<div class="ui checkbox testCheckbox">
-							<input type="checkbox" name="${answer.name}r" <#if answer.right>checked</#if> title="Check right answer">
-							<label></label>
-						</div>
+			<#list question.answers as answer>
+				<div class="delete-block-answer">
+					<button type="button" class="ui mini red icon button answer-delete-button" name='${answer.name}' onclick="delete_answer(this)">
+						<i class="delete icon"></i>
+					</button>
+					<div class="field testAnswer">
+						<input type="text" name="${answer.name}" value="${answer.answer}" required>
 					</div>
-                </#list>
-            </#if>
+					<div class="ui checkbox testCheckbox">
+						<input type="checkbox" name="${answer.name}r" <#if answer.right>checked</#if> title="Check right answer">
+						<label></label>
+					</div>
+				</div>
+            </#list>
 
-			<div id="new_answ_q1">
-				<a class="ui icon button" onclick="add_answer(1)" style="display: block; width: 40px">
+			<div id="new_answ_${question.parameterName}">
+				<a class="ui icon button" onclick="add_answer_by_name(${question.parameterName})" style="display: block; width: 40px">
 					<i class="plus icon"></i>
 				</a>
 			</div>
-
 		</div>
+
+		</#list>
 		<div class="ui divider"></div>
 		<div id="new_question" style="margin-bottom: 1%">
 			<a class="ui icon button" onclick="add_question()">
@@ -211,7 +213,7 @@
 
 
 		<button class="ui primary button" type="submit" style="margin-top: 5%; margin-bottom: 2%;">
-			Create
+			Update
 		</button>
 
 	</form>

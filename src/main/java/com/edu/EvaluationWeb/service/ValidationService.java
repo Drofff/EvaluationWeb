@@ -74,16 +74,4 @@ public class ValidationService {
         }
     }
 
-    public List<Long> parseAnswers(String answers) {
-        if (answers.matches(".*,.*")) {
-            List<Long> result = new LinkedList<>();
-            for (String s : answers.split(",")) {
-                result.add(Long.parseLong(s));
-            }
-            return result;
-        }
-        return Collections.singletonList(Long.parseLong(answers));
-
-    }
-
 }
