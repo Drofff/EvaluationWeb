@@ -6,50 +6,15 @@
     <script src="https://cdn.jsdelivr.net/npm/semantic-ui@2.4.2/dist/semantic.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
-    <script>
-        $(function() {
-            $("#photo").click(function() {
-                $('.ui.modal').modal('show');
-            });
-            $("#cancel").click(function() {
-                $('.ui.modal').modal('hide');
-            });
-        });
-    </script>
+    <link rel="stylesheet" href="/resources/style.css">
 </head>
 <body>
-<div class="ui menu">
-    <div class="header item">
-        Evaluation Web
+<#include "parts/navbar.ftl">
+<#if error_message??>
+    <div class="ui negative message" style="width: 30%; margin-left: 35%; text-align: center;">
+        <p>${error_message}</p>
     </div>
-    <a class="item" href="/">
-        Schedule
-    </a>
-    <a class="item" href="/test">
-        Tests
-    </a>
-    <a class="item active">
-        Profile
-    </a>
-    <#if isTeacher?? && isTeacher>
-    <a class="item" href="/teacher/manager">
-        Lessons Manager
-    </a>
-    <a class="item" href="/teacher/storage">
-        My Storage
-    </a>
 </#if>
-<#if isAdmin?? && isAdmin>
-<a class="item" href="/admin/users">
-    Admin Panel
-</a>
-</#if>
-<div class="right menu">
-    <div class="item">
-        <a class="ui primary button" href="/logout">Log out</a>
-    </div>
-</div>
-</div>
 
 <div class="ui modal">
     <form class="ui form" action="/profile/edit/photo" enctype="multipart/form-data" method="post">

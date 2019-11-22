@@ -1,0 +1,25 @@
+package com.drofff.edu.repository;
+
+import com.drofff.edu.entity.Group;
+import com.drofff.edu.entity.Profile;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.stereotype.Repository;
+
+import java.util.Optional;
+import java.util.Set;
+
+@Repository
+public interface GroupRepository extends JpaRepository<Group, Long> {
+
+    @Query("from Group g join g.teachers t where :teacher in t")
+    Set<Group> findByTeacher(Profile teacher);
+
+    Optional<Group> findByName(String name);
+
+    @Query("from Group g where g.name like CONCAT(:name, '%')")
+    Page<Group> findByNameMatch(String name, Pageable pageable);
+
+}

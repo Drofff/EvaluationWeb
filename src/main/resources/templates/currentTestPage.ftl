@@ -9,71 +9,16 @@
             crossorigin="anonymous"></script><script src="https://cdn.jsdelivr.net/npm/semantic-ui@2.4.2/dist/semantic.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="/resources/style.css">
 </head>
-<script>
 
-    var total_test_time = ${totalTestTime};
-    var time = ${timeToDeadline};
-
-    $(function() {
-
-        $('#prog').progress();
-
-        var fun_do = setInterval(function() {
-
-            $.post("/test/time", { duration : total_test_time }, function(data) {
-
-                $("#timer").text(data['remaind_time'] + ' minutes');
-
-                time = data['remaind_time'];
-
-                if (data <= 0) {
-
-                    alert('Sorry, time is out');
-
-                    clearInterval(fun_do);
-
-                }
-
-            });
-        }, 1000 * 10);
-
-    });
-
-</script>
 <body>
-<div class="ui menu">
-    <div class="header item">
-        Evaluation Web
+<#include "parts/navbar.ftl">
+<#if error_message??>
+    <div class="ui negative message" style="width: 30%; margin-left: 35%; text-align: center;">
+        <p>${error_message}</p>
     </div>
-    <a class="item" href="/">
-        Schedule
-    </a>
-    <a class="item active">
-        Tests
-    </a>
-    <a class="item" href="/profile">
-        Profile
-    </a>
-    <#if isTeacher?? && isTeacher>
-    <a class="item" href="/teacher/manager">
-        Lessons Manager
-    </a>
-    <a class="item" href="/teacher/storage">
-        My Storage
-    </a>
 </#if>
-<#if isAdmin?? && isAdmin>
-<a class="item" href="/admin/users">
-    Admin Panel
-</a>
-</#if>
-<div class="right menu">
-    <div class="item">
-        <a class="ui primary button" href="/logout">Log out</a>
-    </div>
-</div>
-</div>
 <div class="ui segment grid">
     <div class="ui left fixed vertical menu" style="margin-top:5%;">
         <div class="item">
@@ -82,10 +27,8 @@
         </div>
         Time left:
         <p id="timer">${timeToDeadline} minutes</p>
-            <div class="ui progress">
-                <div class="bar">
-                    <div class="progress" id="prog" data-percent="${fullPercent}"></div>
-                </div>
+            <div class="ui progress" id="prog" data-percent="${fullPercent}">
+                <div class="bar"></div>
             </div>
         <a class="ui primary button" href="/test/finish" style="margin-left : 22%;">Finish</a>
     </div>
@@ -109,9 +52,27 @@
     <div class="ui buttons" >
         <#list questions as q, r>
             <a href="/test/currentTest?question=${q}" class="ui button <#if r>green</#if> <#if q == questionNumber>active</#if>">${q}</a>
-    </#list>
+        </#list>
     </div>
 </div>
 
 </div>
+<script>
+    var total_test_time = ${totalTestTime};
+    var time = ${timeToDeadline};
+    $(function() {
+        $('#prog').progress();
+        var fun_do = setInterval(function() {
+            $.post("/test/time", { duration : total_test_time }, function(data) {
+                $("#timer").text(data['remaind_time'] + ' minutes');
+                time = data['remaind_time'];
+                if (time <= 0) {
+                    alert('Sorry, time is out');
+                    clearInterval(fun_do);
+                }
+            });
+        }, 1000 * 10);
+    });
+</script>
+</body>
 </html>
