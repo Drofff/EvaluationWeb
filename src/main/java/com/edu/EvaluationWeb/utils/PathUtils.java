@@ -41,20 +41,4 @@ public class PathUtils {
         return navigation;
     }
 
-	public static String buildUpdateRedirectWithQueryParams(Long id, String ... params) {
-		StringBuilder uri = new StringBuilder("redirect:/test/update/").append(id);
-		if(params.length > 0) {
-			uri.append("?");
-			for(int i = 0; i < params.length; i += 2) {
-				if(i > 0) {
-					uri.append("&");
-				}
-				uri.append(params[i]);
-				uri.append("=");
-				uri.append(params[i + 1]);
-			}
-		}
-		return uri.toString();
-	}
-
 }

@@ -32,6 +32,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import com.edu.EvaluationWeb.component.UserContext;
 import com.edu.EvaluationWeb.constants.ModelConstants;
 import com.edu.EvaluationWeb.dto.AnswerDto;
+import com.edu.EvaluationWeb.dto.ManageTestDto;
 import com.edu.EvaluationWeb.dto.QuestionDto;
 import com.edu.EvaluationWeb.dto.TestDto;
 import com.edu.EvaluationWeb.dto.TestResultDto;
@@ -52,21 +53,21 @@ import com.edu.EvaluationWeb.repository.TestRepository;
 import com.edu.EvaluationWeb.repository.TestResultRepository;
 import com.edu.EvaluationWeb.service.FilesService;
 import com.edu.EvaluationWeb.service.TestService;
-import com.edu.EvaluationWeb.service.ValidationService;
+import com.edu.EvaluationWeb.utils.ClosestTestComparator;
 import com.edu.EvaluationWeb.utils.ParseUtils;
-import com.edu.EvaluationWeb.utils.PathUtils;
 import com.edu.EvaluationWeb.utils.TestUtils;
 
 @Controller
 @RequestMapping("/test")
 public class TestController {
 
+	private static final DateTimeFormatter DATE_TIME_FORMAT = DateTimeFormatter.ofPattern("dd' 'LLLL' ('hh':'mm')'");
+
     private final ProfileRepository profileRepository;
     private final TestService testService;
     private final TestRepository testRepository;
     private final TestResultRepository testResultRepository;
     private final AnswerRepository answerRepository;
-    private final ValidationService validationService;
     private final TestResultMapper testResultMapper;
     private final ParseUtils parseUtils;
     private final TestDtoMapper testDtoMapper;
@@ -77,17 +78,15 @@ public class TestController {
     @Autowired
     public TestController(ProfileRepository profileRepository, TestService testService,
                           TestRepository testRepository, TestResultRepository testResultRepository,
-                          AnswerRepository answerRepository, ValidationService validationService,
-                          TestResultMapper testResultMapper, ParseUtils parseUtils,
-                          TestDtoMapper testDtoMapper, UserContext userContext, GroupRepository groupRepository,
-                          FilesService filesService) {
+                          AnswerRepository answerRepository, TestResultMapper testResultMapper,
+                          ParseUtils parseUtils, TestDtoMapper testDtoMapper, UserContext userContext,
+                          GroupRepository groupRepository, FilesService filesService) {
         this.profileRepository = profileRepository;
         this.testService = testService;
 
         this.testRepository = testRepository;
         this.testResultRepository = testResultRepository;
         this.answerRepository = answerRepository;
-        this.validationService = validationService;
         this.testResultMapper = testResultMapper;
         this.parseUtils = parseUtils;
         this.testDtoMapper = testDtoMapper;
@@ -522,36 +521,39 @@ public class TestController {
 
     @GetMapping("/update/{id}")
     @PreAuthorize("hasAuthority('TEACHER')")
-    public String updateTestPage(@PathVariable Long id, Model model,
-                                 @RequestParam(name = ModelConstants.ERROR_MESSAGE_PARAM, required = false) String errorMessage,
-                                 @RequestParam(name = ModelConstants.INFO_MESSAGE, required = false) String infoMessage) {
+    public String updateTestPage(@PathVariable Long id, Model model) {
     	Test test = testService.getById(id);
-    	Set<QuestionDto> questions = TestUtils.getQuestionDtoSet(test);
-    	model.addAttribute("questions", questions);
-	    model.addAttribute("lastQuestionIndex", questions.size());
-        model.addAttribute("test", test);
-        model.addAttribute("testId", test.getId());
-        model.addAttribute("selectedGroupsNames", TestUtils.toGroupNamesList(test.getGroups()));
-        setMyGroups(model);
-        if(Objects.nonNull(errorMessage)) {
-        	model.addAttribute(ModelConstants.ERROR_MESSAGE_PARAM, errorMessage);
-        }
-        if(Objects.nonNull(infoMessage)) {
-        	model.addAttribute(ModelConstants.INFO_MESSAGE, infoMessage);
-        }
+    	putTestIntoModel(test, model);
+	    setMyGroups(model);
         return "editTestPage";
     }
 
     @PostMapping("/update/{id}")
     @PreAuthorize("hasAuthority('TEACHER')")
-    public String updateTest(TestDto testDto, @PathVariable Long id, HttpServletRequest request) {
+    public String updateTest(TestDto testDto, @PathVariable Long id, HttpServletRequest request, Model model) {
         try {
         	Test test = buildTest(id, testDto, request.getParameterMap());
+        	putTestIntoModel(test, model);
             testService.update(test);
-            return PathUtils.buildUpdateRedirectWithQueryParams(id, ModelConstants.INFO_MESSAGE, "Test was successfully updated");
-        } catch(ValidationException | BaseException e) {
-            return PathUtils.buildUpdateRedirectWithQueryParams(id, ModelConstants.ERROR_MESSAGE_PARAM, e.getMessage());
+            model.addAttribute(ModelConstants.INFO_MESSAGE, "Test was successfully updated");
+        } catch(ValidationException e) {
+            model.addAttribute(ModelConstants.ERROR_MESSAGE_PARAM, e.getMessage());
+            model.mergeAttributes(e.getFieldErrors());
+        } catch(BaseException e) {
+			model.addAttribute(ModelConstants.ERROR_MESSAGE_PARAM, e.getMessage());
         }
+        setMyGroups(model);
+        return "editTestPage";
+    }
+
+    private void putTestIntoModel(Test test, Model model) {
+	    Set<QuestionDto> questions = TestUtils.getQuestionDtoSet(test);
+	    model.addAttribute("questions", questions);
+	    model.addAttribute("lastQuestionIndex", questions.size());
+	    model.addAttribute("test", test);
+	    model.addAttribute("testId", test.getId());
+	    List<String> groupNames = TestUtils.toGroupNamesList(test.getGroups());
+	    model.addAttribute("selectedGroupsNames", groupNames);
     }
 
     private Test buildTest(Long id, TestDto testDto, Map<String, String[]> params) {
@@ -574,24 +576,37 @@ public class TestController {
 		model.addAttribute("my_groups", groupRepository.findByTeacher(profile));
 	}
 
-    @GetMapping("/active/{id}/{isActive}")
-    public String activateTest(@PathVariable Long id, @PathVariable Boolean isActive,
-                               @RequestHeader String referer, Model model) {
-        try {
-            testService.activateTest(id, isActive);
-        } catch(BaseException e) {
-            model.addAttribute("error_message", e.getMessage());
-        }
-        return "redirect:" + Optional.ofNullable(referer).orElse("/test");
-    }
-
     @GetMapping("/manage")
-	public String manageMyTests(Optional<Integer> page, Model model) {
+	public String manageMyTests(Optional<Integer> page, Model model,
+                                @RequestParam(name = ModelConstants.ERROR_MESSAGE_PARAM, required = false) String errorMessage) {
     	List<Test> tests = testService.getMyOwnTests(page.orElse(0));
+    	model.addAttribute(ModelConstants.ERROR_MESSAGE_PARAM, errorMessage);
     	model.addAttribute("tests", tests.stream()
-			    .map(testDtoMapper::toDto)
-			    .collect(Collectors.toList()));
+			    .sorted(new ClosestTestComparator())
+		        .map(this::toManageTestDto)
+		        .collect(Collectors.toList()));
     	return "manageTests";
     }
+
+    private ManageTestDto toManageTestDto(Test test) {
+	    TestDto testDto = testDtoMapper.toDto(test);
+	    ManageTestDto manageTestDto = new ManageTestDto(testDto);
+	    manageTestDto.setId(test.getId());
+	    manageTestDto.setNumberOfQuestions(test.getNumberOfQuestions());
+	    manageTestDto.setStartTime(test.getStartTime().format(DATE_TIME_FORMAT));
+	    manageTestDto.setDeadLine(test.getDeadLine().format(DATE_TIME_FORMAT));
+	    return manageTestDto;
+    }
+
+	@GetMapping("/active/{id}/{isActive}")
+	public String activateTest(@PathVariable Long id, @PathVariable Boolean isActive,
+	                           @RequestHeader String referer, Model model) {
+		try {
+			testService.activateTest(id, isActive);
+		} catch(BaseException e) {
+			model.addAttribute(ModelConstants.ERROR_MESSAGE_PARAM, e.getMessage());
+		}
+		return "redirect:/test/manage";
+	}
 
 }

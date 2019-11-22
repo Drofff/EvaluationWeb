@@ -17,6 +17,17 @@ public class TestDto {
 
     private Set<String> groups = new HashSet<>();
 
+    public TestDto() {}
+
+    public TestDto(TestDto testDto) {
+    	name = testDto.name;
+    	duration = testDto.duration;
+    	startTime = testDto.startTime;
+    	deadLine = testDto.deadLine;
+    	active = testDto.active;
+    	groups = testDto.groups;
+    }
+
     public String getName() {
         return name;
     }

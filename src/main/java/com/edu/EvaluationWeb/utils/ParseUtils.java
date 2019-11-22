@@ -11,6 +11,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -192,9 +193,20 @@ public class ParseUtils {
 
     public static List<Long> parseAnswersString(String answersStr) {
     	String [] answers = answersStr.split(RIGHT_ANSWERS_SEPARATOR);
-    	return Arrays.stream(answers)
-			    .map(Long::parseLong)
+	    return Arrays.stream(answers)
+			    .map(ParseUtils::parseAnswerString)
+			    .filter(Optional::isPresent)
+			    .map(Optional::get)
 			    .collect(Collectors.toList());
+    }
+
+    private static Optional<Long> parseAnswerString(String answerStr) {
+    	try {
+    		Long answerId = Long.parseLong(answerStr);
+    		return Optional.of(answerId);
+	    } catch(NumberFormatException e) {
+    		return Optional.empty();
+	    }
     }
 
 }
