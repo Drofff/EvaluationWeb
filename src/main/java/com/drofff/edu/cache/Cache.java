@@ -8,18 +8,19 @@ import java.util.concurrent.TimeUnit;
 
 public class Cache<T> {
 
-    private static final Integer EXPIRE_TIME_IN_HOURS = 1;
+    private static final Integer EXPIRE_TIME = 1;
+    private static final TimeUnit EXPIRE_TIME_UNIT = TimeUnit.HOURS;
 
-    private com.github.benmanes.caffeine.cache.Cache<String, T> cache = Caffeine.newBuilder()
-            .expireAfterWrite(expireTimeInHours(), TimeUnit.HOURS)
+    private com.github.benmanes.caffeine.cache.Cache<String, T> caffeineCache = Caffeine.newBuilder()
+            .expireAfterWrite(expireAfterValue(), expireAfterTimeUnit())
             .build();
 
     public void save(String key, T value) {
-        cache.put(key, value);
+        caffeineCache.put(key, value);
     }
 
     public T load(String key) {
-        T value = cache.getIfPresent(key);
+        T value = caffeineCache.getIfPresent(key);
         if(Objects.isNull(value)) {
             throw new CacheException("No data for such key");
         }
@@ -27,11 +28,19 @@ public class Cache<T> {
     }
 
     public void remove(String key) {
-        cache.invalidate(key);
+        caffeineCache.invalidate(key);
     }
 
-    protected Integer expireTimeInHours() {
-        return EXPIRE_TIME_IN_HOURS;
+    protected Integer expireAfterValue() {
+        return EXPIRE_TIME;
+    }
+
+    protected TimeUnit expireAfterTimeUnit() {
+    	return EXPIRE_TIME_UNIT;
+    }
+
+    protected com.github.benmanes.caffeine.cache.Cache<String, T> getCaffeineCache() {
+    	return caffeineCache;
     }
 
 }

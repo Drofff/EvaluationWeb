@@ -1,11 +1,11 @@
 package com.drofff.edu.controller;
 
-import com.drofff.edu.dto.GroupOptionDto;
-import com.drofff.edu.entity.Group;
-import com.drofff.edu.entity.Profile;
-import com.drofff.edu.exception.BaseException;
-import com.drofff.edu.service.FilesService;
-import com.drofff.edu.service.StudentService;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -13,11 +13,23 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
-import java.util.*;
-import java.util.stream.Collectors;
+import com.drofff.edu.constants.ModelConstants;
+import com.drofff.edu.dto.GroupOptionDto;
+import com.drofff.edu.dto.ProfileDto;
+import com.drofff.edu.dto.StudentDto;
+import com.drofff.edu.entity.Group;
+import com.drofff.edu.entity.Profile;
+import com.drofff.edu.entity.Subject;
+import com.drofff.edu.exception.BaseException;
+import com.drofff.edu.mapper.ProfileMapper;
+import com.drofff.edu.service.AttendanceService;
+import com.drofff.edu.service.FilesService;
+import com.drofff.edu.service.StudentService;
+import com.drofff.edu.service.SubjectsService;
 
 @Controller
 @RequestMapping("/students")
@@ -26,11 +38,19 @@ public class StudentsSearchController {
 
     private final StudentService studentService;
     private final FilesService filesService;
+    private final ProfileMapper profileMapper;
+    private final AttendanceService attendanceService;
+    private final SubjectsService subjectsService;
 
     @Autowired
-    public StudentsSearchController(StudentService studentService, FilesService filesService) {
+    public StudentsSearchController(StudentService studentService, FilesService filesService,
+                                    ProfileMapper profileMapper, AttendanceService attendanceService,
+                                    SubjectsService subjectsService) {
         this.studentService = studentService;
         this.filesService = filesService;
+	    this.profileMapper = profileMapper;
+	    this.attendanceService = attendanceService;
+	    this.subjectsService = subjectsService;
     }
 
     @GetMapping("/all")
@@ -97,6 +117,26 @@ public class StudentsSearchController {
             groupIds = new ArrayList<>();
         }
         return groupIds;
+    }
+
+    @GetMapping("/{id}")
+	public String getStudentById(@PathVariable Long id, Model model) {
+    	try {
+		    Profile student = studentService.getStudentById(id);
+		    ProfileDto profileDto = profileMapper.toDto(student);
+		    StudentDto studentDto = new StudentDto(profileDto);
+		    String userStatus = attendanceService.getStatusOfUser(student.getUserId());
+		    studentDto.setStatus(userStatus);
+		    studentDto.setId(student.getId());
+		    model.addAttribute("student", studentDto);
+		    List<Subject> subjects = subjectsService.getMySubjects();
+		    if(!subjects.isEmpty()) {
+			    model.addAttribute("subject", subjects.get(0));
+		    }
+	    } catch(BaseException e) {
+    		model.addAttribute(ModelConstants.ERROR_MESSAGE_PARAM, e.getMessage());
+	    }
+    	return "viewStudentPage";
     }
 
 }

@@ -83,4 +83,18 @@ public class StudentService {
         return groupRepository.findByTeacher(user.getProfile());
     }
 
+    public Profile getStudentById(Long id) {
+    	Profile student = profileRepository.findById(id)
+			    .orElseThrow(() -> new BaseException("Invalid student id"));
+    	Profile currentProfile = userContext.getCurrentUser().getProfile();
+    	if(!isTeacherOfGroup(currentProfile, student.getGroup())) {
+    		throw new BaseException("Invalid permissions");
+	    }
+    	return student;
+    }
+
+    private boolean isTeacherOfGroup(Profile teacher, Group group) {
+    	return group.getTeachers().contains(teacher);
+    }
+
 }

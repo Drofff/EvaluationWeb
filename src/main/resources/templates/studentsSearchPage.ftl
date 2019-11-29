@@ -48,11 +48,11 @@
         <#list students as student>
             <#if student.photoUrl??>
                 <div class="ui card">
-                    <a class="image" href="#">
+                    <a class="image">
                         <img src="${student.photoUrl}" style="height: 300px">
                     </a>
                     <div class="content">
-                        <a class="header">${student.firstName} ${student.lastName}</a>
+                        <a class="header" href="/students/${student.id}">${student.firstName} ${student.lastName}</a>
                         <div class="meta">
                             <span>${student.group.name}</span>
                         </div>
