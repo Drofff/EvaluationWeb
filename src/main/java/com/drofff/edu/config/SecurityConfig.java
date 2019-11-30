@@ -21,6 +21,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 
 import javax.validation.Validation;
 import javax.validation.Validator;
+import java.util.Properties;
 
 @Configuration
 @EnableGlobalMethodSecurity(prePostEnabled = true)
@@ -102,6 +103,9 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         javaMailSender.setPort(Integer.parseInt(environment.getProperty("mail.port")));
         javaMailSender.setUsername(environment.getProperty("mail.username"));
         javaMailSender.setPassword(environment.getProperty("mail.password"));
+        Properties properties = new Properties();
+        properties.setProperty("mail.smtp.starttls.enable", "true");
+        javaMailSender.setJavaMailProperties(properties);
         return javaMailSender;
     }
 
